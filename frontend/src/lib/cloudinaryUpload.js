@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL || ''
+import { apiUrl } from './api'
 const maxFileSize = 400 * 1024 * 1024
 
 const allowedMimeTypes = {
@@ -34,7 +34,7 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
     throw new Error(`Choose a supported ${fileType}.`)
   }
 
-  const signatureResponse = await fetch(`${apiBaseUrl}/api/media/signature`, {
+  const signatureResponse = await fetch(apiUrl('/api/media/signature'), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,

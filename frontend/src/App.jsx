@@ -10,6 +10,7 @@ import MusicPlatforms from './components/MusicPlatforms'
 import MusicPlayer from './components/MusicPlayer'
 import SiteFooter from './components/SiteFooter'
 import { getDownloadUrl } from './lib/cloudinaryUpload'
+import { apiUrl } from './lib/api'
 import { upcomingEvents } from './data/events'
 import { genres } from './data/genres'
 import { featuredMixtapes } from './data/mixtapes'
@@ -192,9 +193,9 @@ function App() {
     async function loadContent() {
       try {
         const [mixtapeResponse, eventResponse, galleryResponse] = await Promise.all([
-          fetch('/api/mixtapes'),
-          fetch('/api/events'),
-          fetch('/api/gallery')
+          fetch(apiUrl('/api/mixtapes')),
+          fetch(apiUrl('/api/events')),
+          fetch(apiUrl('/api/gallery'))
         ])
 
         if (!mixtapeResponse.ok || !eventResponse.ok || !galleryResponse.ok) {
