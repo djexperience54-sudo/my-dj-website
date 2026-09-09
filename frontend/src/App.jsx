@@ -11,6 +11,7 @@ import MusicPlayer from './components/MusicPlayer'
 import SiteFooter from './components/SiteFooter'
 import { getDownloadUrl } from './lib/cloudinaryUpload'
 import { apiUrl } from './lib/api'
+import { getSupabaseClient } from './lib/supabaseClient'
 import { upcomingEvents } from './data/events'
 import { genres } from './data/genres'
 import { featuredMixtapes } from './data/mixtapes'
@@ -176,10 +177,31 @@ function MixtapeDetail({ mixtape, onPlay }) {
   )
 }
 
+function getVideoEmbedUrl(videoUrl) {
+  if (!videoUrl) {
+    return ''
+  }
+
+  const normalizedUrl = videoUrl.trim()
+
+  const youtubeMatch = normalizedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/)
+  if (youtubeMatch) {
+    return `https://www.youtube.com/embed/${youtubeMatch[1]}?rel=0`
+  }
+
+  const vimeoMatch = normalizedUrl.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  }
+
+  return normalizedUrl
+}
+
 function App() {
   const [mixtapes, setMixtapes] = useState(featuredMixtapes)
   const [events, setEvents] = useState(upcomingEvents)
   const [gallery, setGallery] = useState(galleryItems)
+  const [featuredVideo, setFeaturedVideo] = useState(null)
   const [isLoadingMixtapes, setIsLoadingMixtapes] = useState(true)
   const [mixtapeError, setMixtapeError] = useState('')
   const [contentError, setContentError] = useState('')
@@ -208,6 +230,16 @@ function App() {
         setMixtapes(mixtapeResult.data)
         setEvents(eventResult.data)
         setGallery(galleryResult.data)
+
+        const { data: videoRows, error: videoError } = await getSupabaseClient()
+          .from('site_videos')
+          .select('id, title, url, type, sort_order')
+          .order('sort_order', { ascending: true })
+          .limit(1)
+
+        if (!videoError && videoRows && videoRows.length > 0) {
+          setFeaturedVideo(videoRows[0])
+        }
       } catch (error) {
         setContentError(error.message)
         setMixtapeError(error.message)
@@ -236,28 +268,46 @@ function App() {
     <div id="top">
       <SiteHeader />
       <main>
-        <section className="hero-section" aria-labelledby="hero-title">
-          <div className="site-container hero-layout">
-            <div className="hero-copy">
-              <p className="eyebrow">INT'L DJ EXPERIENCE</p>
-              <h1 id="hero-title">INT'L DJ EXPERIENCE</h1>
-              <p className="hero-description">
-                Afrobeats, Amapiano, Afrohouse, Drill, Asakaa and Afrofusion - curated for unforgettable moments, from intimate events to packed dance floors.
-              </p>
-              <div className="hero-actions">
-                <a className="primary-button" href="#mixes">Listen to latest mix</a>
-                <a className="secondary-button" href="#book">Book for an event</a>
-              </div>
-            </div>
-            <div className="hero-image">
+        <section className="hero-section" aria-label="Featured DJ image">
+          <div className="site-container hero-layout hero-layout--image-only">
+            <div className="hero-image hero-image--full">
               <img
-                src="https://images.unsplash.com/photo-1571266028243-d220c19c9f4c?auto=format&fit=crop&w=1000&q=85"
+                src="/Hero-view.jpg"
                 alt="DJ performing to a crowd"
               />
-              <span>DJ - SELECTOR - EXPERIENCE</span>
             </div>
           </div>
         </section>
+        {featuredVideo && (
+          <section className="video-section" aria-labelledby="video-title">
+            <div className="site-container">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Live moment</p>
+                  <h2 id="video-title">Featured Video</h2>
+                </div>
+              </div>
+              <div className="video-card">
+                {featuredVideo.url.includes('youtube.com') || featuredVideo.url.includes('youtu.be') || featuredVideo.url.includes('vimeo.com') ? (
+                  <iframe
+                    src={getVideoEmbedUrl(featuredVideo.url)}
+                    title={featuredVideo.title || 'Featured video'}
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video controls src={featuredVideo.url} preload="metadata" />
+                )}
+                <div className="video-copy">
+                  <p className="eyebrow">Spotlight</p>
+                  <h3>{featuredVideo.title}</h3>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
         <section className="mixes-section" aria-labelledby="mixes-title">
           <div className="site-container">
             <div className="section-heading">
