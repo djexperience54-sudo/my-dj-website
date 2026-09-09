@@ -23,7 +23,7 @@ export const galleryItems = [
 
 export const musicPlatforms = [
   { name: 'Audiomack', href: 'https://audiomack.com/intldjexperience', target: '_blank', rel: 'noreferrer' },
-  { name: 'SoundCloud', href: 'https://soundcloud.com/discover', target: '_blank', rel: 'noreferrer' },
+  { name: 'MixCloud', href: 'https://www.mixcloud.com/', target: '_blank', rel: 'noreferrer' },
   { name: 'Spotify', href: 'https://open.spotify.com/', target: '_blank', rel: 'noreferrer' },
   { name: 'YouTube', href: 'https://www.youtube.com/', target: '_blank', rel: 'noreferrer' }
 ]

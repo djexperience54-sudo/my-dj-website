@@ -58,6 +58,9 @@ function AdminDashboard({ user, onSignOut }) {
   const [galleryForm, setGalleryForm] = useState(emptyGalleryItem)
   const [isSavingGallery, setIsSavingGallery] = useState(false)
   const [galleryFile, setGalleryFile] = useState(null)
+  const [videos, setVideos] = useState([])
+  const [videoForm, setVideoForm] = useState({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
+  const [isSavingVideo, setIsSavingVideo] = useState(false)
   const [bookings, setBookings] = useState([])
 
   useEffect(() => {
@@ -108,6 +111,16 @@ function AdminDashboard({ user, onSignOut }) {
         }
 
         setGalleryItems(galleryRows)
+        const { data: videoRows, error: videoError } = await getSupabaseClient()
+          .from('site_videos')
+          .select('id, title, url, type, sort_order')
+          .order('sort_order', { ascending: true })
+
+        if (videoError && !/does not exist|relation .* does not exist/i.test(videoError.message)) {
+          throw videoError
+        }
+
+        setVideos(videoRows ?? [])
         const { data: bookingRows, error: bookingError } = await getSupabaseClient()
           .from('bookings')
           .select('id, name, email, event_type, message, status, created_at')
@@ -370,6 +383,77 @@ function AdminDashboard({ user, onSignOut }) {
     setCounts((currentCounts) => ({ ...currentCounts, gallery_items: Math.max(0, (currentCounts.gallery_items ?? 0) - 1) }))
   }
 
+  function handleVideoChange(event) {
+    const { name, value } = event.target
+    setVideoForm((currentForm) => ({ ...currentForm, [name]: name === 'sort_order' ? Number(value) : value }))
+  }
+
+  function editVideo(item) {
+    setVideoForm({
+      id: item.id,
+      title: item.title,
+      url: item.url,
+      type: item.type || 'youtube',
+      sort_order: item.sort_order ?? 0
+    })
+    setError('')
+    document.getElementById('video-management-title')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function cancelVideoEdit() {
+    setVideoForm({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
+  }
+
+  async function handleVideoSubmit(event) {
+    event.preventDefault()
+    setError('')
+    setIsSavingVideo(true)
+
+    try {
+      const normalizedUrl = videoForm.url.trim()
+      if (!normalizedUrl) {
+        throw new Error('A video link is required.')
+      }
+
+      const { data, error: saveError } = await getSupabaseClient()
+        .from('site_videos')
+        .upsert({ ...videoForm, url: normalizedUrl, type: videoForm.type || 'youtube' })
+        .select()
+        .single()
+
+      if (saveError) {
+        throw saveError
+      }
+
+      setVideos((currentVideos) => {
+        const withoutSaved = currentVideos.filter((entry) => entry.id !== data.id)
+        return [...withoutSaved, data].sort((first, second) => (first.sort_order ?? 0) - (second.sort_order ?? 0))
+      })
+      setVideoForm({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
+    } catch (saveError) {
+      setError(saveError.message)
+    } finally {
+      setIsSavingVideo(false)
+    }
+  }
+
+  async function handleVideoDelete(id) {
+    setError('')
+
+    if (!window.confirm('Delete this video from the public site?')) {
+      return
+    }
+
+    const { error: deleteError } = await getSupabaseClient().from('site_videos').delete().eq('id', id)
+
+    if (deleteError) {
+      setError(deleteError.message)
+      return
+    }
+
+    setVideos((currentVideos) => currentVideos.filter((item) => item.id !== id))
+  }
+
   async function handleBookingStatusChange(id, status) {
     setError('')
 
@@ -484,6 +568,50 @@ function AdminDashboard({ user, onSignOut }) {
               <div className="admin-row-actions">
                 <button type="button" onClick={() => editMixtape(mixtape)}>Edit</button>
                 <button type="button" onClick={() => handleMixtapeDelete(mixtape.id)}>Delete</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="admin-next-section" aria-labelledby="video-management-title">
+        <p className="eyebrow">Video spotlight</p>
+        <h2 id="video-management-title">Manage a live video</h2>
+        <form className="admin-content-form" onSubmit={handleVideoSubmit}>
+          <label>
+            Title
+            <input name="title" value={videoForm.title} onChange={handleVideoChange} required />
+          </label>
+          <label>
+            Video URL
+            <input name="url" value={videoForm.url} onChange={handleVideoChange} placeholder="https://www.youtube.com/watch?v=... or mp4 link" required />
+          </label>
+          <label>
+            Video type
+            <select name="type" value={videoForm.type} onChange={handleVideoChange}>
+              <option value="youtube">YouTube</option>
+              <option value="vimeo">Vimeo</option>
+              <option value="direct">Direct video</option>
+            </select>
+          </label>
+          <label>
+            Sort order
+            <input name="sort_order" type="number" value={videoForm.sort_order} onChange={handleVideoChange} />
+          </label>
+          <button type="submit" disabled={isSavingVideo}>
+            {isSavingVideo ? 'Saving...' : 'Save video'}
+          </button>
+          {videoForm.id && <button className="admin-cancel-button" type="button" onClick={cancelVideoEdit}>Cancel edit</button>}
+        </form>
+        <div className="admin-content-list">
+          {videos.map((item) => (
+            <article className="admin-content-row" key={item.id}>
+              <div>
+                <strong>{item.title}</strong>
+                <span>{item.url}</span>
+              </div>
+              <div className="admin-row-actions">
+                <button type="button" onClick={() => editVideo(item)}>Edit</button>
+                <button type="button" onClick={() => handleVideoDelete(item.id)}>Delete</button>
               </div>
             </article>
           ))}

@@ -86,7 +86,7 @@ function SiteHeader() {
           </nav>
           <SiteSearch />
           <a className="book-button" href="#book">
-            Book DJ
+            Book Int'L DJ Experience
           </a>
           <button
             className="menu-button"
@@ -181,19 +181,32 @@ function MixtapeDetail({ mixtape, onPlay }) {
 }
 
 function SupportSection() {
+  async function handleMomoClick(event) {
+    event.preventDefault()
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText('0558520091')
+      }
+    } catch (error) {
+      // Ignore clipboard failures and continue to the phone call flow.
+    }
+
+    window.location.href = 'tel:+233558520091'
+  }
+
   return (
     <section className="support-section" id="support" aria-labelledby="support-title">
       <div className="site-container support-content">
         <div className="support-header">
-          <p className="eyebrow">Support the sound</p>
+          <p className="eyebrow">Support the DJ</p>
           <h2 id="support-title">Show Some Love to the DJ</h2>
         </div>
         <div className="support-grid">
-          <a className="support-card support-card--momo" href="tel:+233558520091" aria-label="Send mobile money to +233558520091">
+          <a className="support-card support-card--momo" href="tel:+233558520091" aria-label="Send mobile money to +233558520091" onClick={handleMomoClick}>
             <span className="support-icon" aria-hidden="true">💸</span>
             <span className="support-label">MTN Mobile Money</span>
             <strong>0558520091</strong>
-            <small>+233 55 852 0091</small>
+            <small>Dapaah Jerry John</small>
           </a>
           <a
             className="support-card support-card--paypal"
@@ -308,13 +321,13 @@ function App() {
           <div className="site-container hero-layout">
             <div className="hero-copy">
               <p className="eyebrow">Afrobeats & Amapiano DJ</p>
-              <h1 id="hero-title">Live energy. Deep culture. Unforgettable nights.</h1>
+              <h1 id="hero-title">INT'L DJ EXPERIENCE</h1>
               <p className="hero-description">
-                Bringing the rhythm, movement, and atmosphere that keeps the dance floor packed from the first song to the final encore.
+                Live energy. Deep culture. Unforgettable nights.
               </p>
               <div className="hero-actions">
                 <a className="primary-button" href="#mixes">Listen to latest mix</a>
-                <a className="secondary-button" href="#book">Book for an event</a>
+                <a className="secondary-button" href="#book">Book Int'L DJ Experience</a>
               </div>
             </div>
             <div className="hero-image">
@@ -370,7 +383,7 @@ function App() {
             )}
           </div>
         </section>
-        <section className="mixes-section" aria-labelledby="mixes-title">
+        <section className="mixes-section" id="mixes" aria-labelledby="mixes-title">
           <div className="site-container">
             <div className="section-heading">
               <div>
@@ -395,7 +408,7 @@ function App() {
                         Download mix
                       </a>
                     )}
-                    <a className="text-link" href="#book">Book the experience</a>
+                    <a className="text-link" href="#book">Play Mix</a>
                   </div>
                 </div>
               </>
@@ -408,9 +421,9 @@ function App() {
             <p className="eyebrow">Browse by genre</p>
             <h2 id="sound-title">The Sound</h2>
             <p className="section-description">
-              Every genre connects directly to its own collection of mixtapes. As more mixes are uploaded, the collection grows with them.
+              You can browse your favorite genre mixtapes and find the sound that matches your night.
             </p>
-            <GenreNavigation genres={genres} />
+            <GenreNavigation genres={genres} mixtapes={mixtapes} />
           </div>
         </section>
         <section className="events-section" id="events" aria-labelledby="events-title">

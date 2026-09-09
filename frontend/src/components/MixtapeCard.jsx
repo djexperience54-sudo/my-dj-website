@@ -17,7 +17,7 @@ function MixtapeCard({ mixtape, onPlay }) {
           )}
           {mixtape.audio_url && (
             <a className="mix-action-button mix-action-button--primary" href={getDownloadUrl(mixtape.audio_url, mixtape.title)} download>
-              Download mix
+              Download Mix
             </a>
           )}
         </div>

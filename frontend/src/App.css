@@ -39,6 +39,10 @@
   text-decoration: none;
 }
 
+.hero-copy .eyebrow {
+  margin-bottom: 10px;
+}
+
 .brand span {
   color: var(--color-gold);
 }
@@ -145,7 +149,7 @@ nav a:hover {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: 0.96fr 1.04fr;
+  grid-template-columns: 0.86fr 1.14fr;
   gap: 48px;
   align-items: center;
 }
@@ -544,22 +548,31 @@ h1 {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
 .mix-action-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 18px rgb(0 0 0 / 8%);
+  box-shadow: 0 10px 18px rgb(0 0 0 / 10%);
 }
 
 .mix-action-button--primary {
-  background: var(--color-ink);
+  background: linear-gradient(135deg, #1c1c1c, #8a6a2a);
+  border-color: transparent;
   color: var(--color-white);
 }
 
+.mix-action-button--primary:hover {
+  background: linear-gradient(135deg, #8a6a2a, #d7b365);
+}
+
 .mix-action-button--secondary {
-  background: var(--color-white);
+  background: linear-gradient(135deg, #faf7f1, #f0ebe0);
   color: var(--color-ink);
+}
+
+.mix-action-button--secondary:hover {
+  border-color: var(--color-gold);
 }
 
 .mix-detail-link {
@@ -712,6 +725,11 @@ h1 {
   cursor: pointer;
 }
 
+.music-player > button:hover,
+.music-player > a:hover {
+  cursor: pointer;
+}
+
 .music-player > a:hover,
 .music-player > button:hover {
   color: var(--color-gold);
@@ -769,6 +787,10 @@ h1 {
   color: var(--color-gold);
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
+}
+
+.genre-navigation a:hover {
+  background: #f7f3ec;
 }
 
 .event-list {
