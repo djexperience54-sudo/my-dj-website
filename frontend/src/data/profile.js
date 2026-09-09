@@ -11,9 +11,9 @@ export const djProfile = {
 }
 
 export const socialPlatforms = [
-  { name: 'TikTok', href: '#' },
-  { name: 'Instagram', href: '#' },
-  { name: 'Facebook', href: '#' },
-  { name: 'YouTube', href: '#' },
-  { name: 'WhatsApp', href: '#' }
+  { name: 'TikTok', href: 'https://www.tiktok.com/' },
+  { name: 'Instagram', href: 'https://www.instagram.com/' },
+  { name: 'Facebook', href: 'https://www.facebook.com/' },
+  { name: 'YouTube', href: 'https://www.youtube.com/' },
+  { name: 'WhatsApp', href: 'https://wa.me/' }
 ]

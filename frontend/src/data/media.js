@@ -22,8 +22,8 @@ export const galleryItems = [
 ]
 
 export const musicPlatforms = [
-  { name: 'Audiomack', href: '#' },
-  { name: 'SoundCloud', href: '#' },
-  { name: 'Spotify', href: '#' },
-  { name: 'YouTube', href: '#' }
+  { name: 'Audiomack', href: 'https://audiomack.com/' },
+  { name: 'SoundCloud', href: 'https://soundcloud.com/discover' },
+  { name: 'Spotify', href: 'https://open.spotify.com/' },
+  { name: 'YouTube', href: 'https://www.youtube.com/' }
 ]
