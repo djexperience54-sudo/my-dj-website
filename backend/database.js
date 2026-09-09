@@ -43,11 +43,25 @@ function getGalleryItems() {
   return getRows('gallery_items', 'id, src, alt', 'sort_order')
 }
 
+function formatSupabaseError(error, context) {
+  const message = error && error.message ? error.message : 'A database error occurred.'
+
+  if (message.includes('Could not find the table') || message.includes('does not exist')) {
+    return `${context} is temporarily unavailable because the Supabase table is not ready yet. Run the SQL schema in backend/supabase-schema.sql and then try again.`
+  }
+
+  if (message.includes('row-level security') || message.includes('permission denied for table')) {
+    return `${context} is temporarily unavailable because the Supabase permissions are not configured yet.`
+  }
+
+  return message
+}
+
 async function createBooking(booking) {
   const { data, error } = await supabase.from('bookings').insert(booking).select().single()
 
   if (error) {
-    throw error
+    throw new Error(formatSupabaseError(error, 'Booking submission'))
   }
 
   return data
@@ -57,10 +71,10 @@ async function createComment(comment) {
   const { data, error } = await supabase.from('comments').insert(comment).select().single()
 
   if (error) {
-    throw error
+    throw new Error(formatSupabaseError(error, 'Comment submission'))
   }
 
   return data
 }
 
-module.exports = { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes }
+module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes }

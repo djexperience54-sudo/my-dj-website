@@ -89,8 +89,10 @@ app.post('/api/bookings', asyncRoute(async (request, response) => {
       await sendBookingEmail(emailPayload)
     } catch (emailError) {
       console.error('Booking email delivery failed:', emailError.message)
-      return response.status(500).json({
-        error: 'Your booking was saved, but the email delivery is not configured yet. Add the Gmail SMTP app password to finish sending mail.'
+      return response.status(202).json({
+        success: true,
+        message: 'Your booking request was saved successfully, but email delivery is not active yet. Add the Gmail SMTP app password in Render to enable booking notifications.',
+        data: booking
       })
     }
 
@@ -115,7 +117,9 @@ app.post('/api/comments', asyncRoute(async (request, response) => {
       data: comment
     })
   } catch (error) {
-    response.status(400).json({ error: error.message })
+    response.status(400).json({
+      error: error.message || 'Your comment could not be posted right now. Please try again in a moment.'
+    })
   }
 }))
 
