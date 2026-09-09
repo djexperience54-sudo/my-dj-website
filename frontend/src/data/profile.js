@@ -11,9 +11,9 @@ export const djProfile = {
 }
 
 export const socialPlatforms = [
-  { name: 'TikTok', href: 'https://www.tiktok.com/@intldjexperience?_r=1&_t=ZN-99ZiOSDyejC' },
-  { name: 'Instagram', href: 'https://www.instagram.com/intldjexperience?stkn=MXZraTN3ajdsNW0zdg%3D%3D&utm_source=qr' },
-  { name: 'Facebook', href: 'https://www.facebook.com/share/1JiDypSoqt/?mibextid=wwXIfr' },
-  { name: 'YouTube', href: 'https://www.youtube.com/' },
-  { name: 'WhatsApp', href: 'https://wa.me/' }
+  { name: 'TikTok', href: 'https://www.tiktok.com/@intldjexperience?_r=1&_t=ZN-99ZiOSDyejC', target: '_blank', rel: 'noreferrer' },
+  { name: 'Instagram', href: 'https://www.instagram.com/intldjexperience?stkn=MXZraTN3ajdsNW0zdg%3D%3D&utm_source=qr', target: '_blank', rel: 'noreferrer' },
+  { name: 'Facebook', href: 'https://www.facebook.com/share/1JiDypSoqt/?mibextid=wwXIfr', target: '_blank', rel: 'noreferrer' },
+  { name: 'YouTube', href: 'https://www.youtube.com/', target: '_blank', rel: 'noreferrer' },
+  { name: 'WhatsApp', href: 'https://wa.me/233558520091', target: '_blank', rel: 'noreferrer' }
 ]
