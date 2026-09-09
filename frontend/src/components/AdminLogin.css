@@ -87,6 +87,12 @@
   font-weight: 700;
 }
 
+.admin-change-user-button {
+  border-color: #e9e9e7 !important;
+  background: #fff !important;
+  color: #111214 !important;
+}
+
 .admin-login-panel button:disabled {
   cursor: wait;
   opacity: 0.65;

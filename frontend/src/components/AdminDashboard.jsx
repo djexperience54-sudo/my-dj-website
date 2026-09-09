@@ -82,7 +82,7 @@ function AdminDashboard({ user, onSignOut }) {
   const [isSavingVideo, setIsSavingVideo] = useState(false)
   const [comments, setComments] = useState([])
   const [bookings, setBookings] = useState([])
-  const SESSION_TIMEOUT_MS = 30 * 60 * 1000
+  const SESSION_TIMEOUT_MS = 2 * 60 * 1000
 
   useEffect(() => {
     const lastActivityRef = { current: Date.now() }

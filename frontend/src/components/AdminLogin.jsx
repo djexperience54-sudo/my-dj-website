@@ -6,11 +6,14 @@ import './AdminLogin.css'
 function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [verifyPassword, setVerifyPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [user, setUser] = useState(null)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [sessionMessage, setSessionMessage] = useState('')
+  const [verificationStep, setVerificationStep] = useState(false)
+  const [pendingUser, setPendingUser] = useState(null)
 
   useEffect(() => {
     const supabase = getSupabaseClient()
@@ -62,7 +65,11 @@ function AdminLogin() {
         throw signInError
       }
 
-      setUser(data.user)
+      setPendingUser(data.user)
+      setVerificationStep(true)
+      setPassword('')
+      setVerifyPassword('')
+      setSessionMessage('Security check required')
     } catch (signInError) {
       setError(signInError.message)
     } finally {
@@ -70,8 +77,39 @@ function AdminLogin() {
     }
   }
 
+  async function handleVerify(event) {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+      const { data, error: verifyError } = await getSupabaseClient().auth.signInWithPassword({
+        email,
+        password: verifyPassword
+      })
+
+      if (verifyError) {
+        throw verifyError
+      }
+
+      setUser(data.user)
+      setPendingUser(null)
+      setVerificationStep(false)
+      setSessionMessage('Session active')
+    } catch (verifyError) {
+      setError(verifyError.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (user) {
-    return <AdminDashboard user={user} onSignOut={() => setUser(null)} />
+    return <AdminDashboard user={user} onSignOut={() => {
+      setUser(null)
+      setVerificationStep(false)
+      setPendingUser(null)
+      setSessionMessage('Admin locked for inactivity. Please sign in again.')
+    }} />
   }
 
   if (isCheckingSession) {
@@ -83,8 +121,30 @@ function AdminLogin() {
       <section className="admin-login-panel" aria-labelledby="admin-login-title">
         <a className="admin-back-link" href="/">Back to website</a>
         <p className="eyebrow">INT&apos;L DJ EXPERIENCE</p>
-        <h1 id="admin-login-title">Admin sign in</h1>
-        <form onSubmit={handleSubmit}>
+        <h1 id="admin-login-title">{verificationStep ? 'Admin verification' : 'Admin sign in'}</h1>
+
+        {verificationStep ? (
+          <form onSubmit={handleVerify}>
+            <label>
+              Confirm password
+              <input type="password" value={verifyPassword} onChange={(event) => setVerifyPassword(event.target.value)} placeholder="Re-enter your password" required />
+            </label>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Verifying...' : 'Verify access'}
+            </button>
+            <button type="button" className="admin-change-user-button" onClick={() => {
+              setVerificationStep(false)
+              setPendingUser(null)
+              setVerifyPassword('')
+              setError('')
+            }}>
+              Back to sign in
+            </button>
+            {sessionMessage && <p className="admin-login-success">{sessionMessage}</p>}
+            {error && <p className="admin-login-error" role="alert">{error}</p>}
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
             <label>
               Email
               <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
@@ -98,7 +158,8 @@ function AdminLogin() {
             </button>
             {sessionMessage && <p className="admin-login-success">{sessionMessage}</p>}
             {error && <p className="admin-login-error" role="alert">{error}</p>}
-        </form>
+          </form>
+        )}
       </section>
     </main>
   )
