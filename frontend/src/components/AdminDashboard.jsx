@@ -33,6 +33,21 @@ const emptyGalleryItem = {
   sort_order: 0
 }
 
+const emptySiteSettings = {
+  id: 'default',
+  hero_title: "INT'L DJ EXPERIENCE",
+  hero_subtitle: 'Live energy. Deep culture. Unforgettable nights.',
+  hero_image: '/Hero-view.jpg',
+  about_eyebrow: "INT'L DJ EXPERIENCE",
+  about_title: 'About Me',
+  about_image: 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85',
+  about_image_alt: 'Int\'L DJ Experience performer',
+  about_paragraphs: [
+    'Int\'L DJ Experience, known legally as Dapaah Jerry John, is a versatile Ghanaian disk jockey, entertainer, and professional website developer.',
+    'Popularly crowned the Campus DJ, he has built a strong reputation across the Ghanaian entertainment circuit for his high-energy live performances and viral digital mixtapes. Jerry balances his passion for music with a deep background in technology. He is currently studying Information and Communications Technology (ICT) at the University of Education, Winneba (UEW). By uniquely merging his technical skills as a web developer with his musical creativity, Int\'L DJ Experience is paving a distinct path as a modern, self-reliant tech-and-entertainment brand in the digital music era.'
+  ]
+}
+
 function formatFileSize(bytes) {
   if (!bytes) {
     return ''
@@ -58,6 +73,8 @@ function AdminDashboard({ user, onSignOut }) {
   const [galleryForm, setGalleryForm] = useState(emptyGalleryItem)
   const [isSavingGallery, setIsSavingGallery] = useState(false)
   const [galleryFile, setGalleryFile] = useState(null)
+  const [siteSettingsForm, setSiteSettingsForm] = useState(emptySiteSettings)
+  const [isSavingSiteSettings, setIsSavingSiteSettings] = useState(false)
   const [videos, setVideos] = useState([])
   const [videoForm, setVideoForm] = useState({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
   const [isSavingVideo, setIsSavingVideo] = useState(false)
@@ -111,6 +128,26 @@ function AdminDashboard({ user, onSignOut }) {
         }
 
         setGalleryItems(galleryRows)
+        const { data: siteSettingsRow, error: siteSettingsError } = await getSupabaseClient()
+          .from('site_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle()
+
+        if (siteSettingsError && !/does not exist|relation .* does not exist/i.test(siteSettingsError.message)) {
+          throw siteSettingsError
+        }
+
+        if (siteSettingsRow) {
+          setSiteSettingsForm({
+            ...emptySiteSettings,
+            ...siteSettingsRow,
+            about_paragraphs: Array.isArray(siteSettingsRow.about_paragraphs)
+              ? siteSettingsRow.about_paragraphs
+              : (siteSettingsRow.about_paragraphs ? String(siteSettingsRow.about_paragraphs).split(/\n+/) : emptySiteSettings.about_paragraphs)
+          })
+        }
+
         const { data: videoRows, error: videoError } = await getSupabaseClient()
           .from('site_videos')
           .select('id, title, url, type, sort_order')
@@ -383,6 +420,56 @@ function AdminDashboard({ user, onSignOut }) {
     setCounts((currentCounts) => ({ ...currentCounts, gallery_items: Math.max(0, (currentCounts.gallery_items ?? 0) - 1) }))
   }
 
+  function handleSiteSettingsChange(event) {
+    const { name, value } = event.target
+    setSiteSettingsForm((currentForm) => ({ ...currentForm, [name]: value }))
+  }
+
+  async function handleSiteSettingsSubmit(event) {
+    event.preventDefault()
+    setError('')
+    setIsSavingSiteSettings(true)
+
+    try {
+      const payload = {
+        id: siteSettingsForm.id || 'default',
+        hero_title: siteSettingsForm.hero_title.trim() || "INT'L DJ EXPERIENCE",
+        hero_subtitle: siteSettingsForm.hero_subtitle.trim() || 'Live energy. Deep culture. Unforgettable nights.',
+        hero_image: siteSettingsForm.hero_image.trim() || '/Hero-view.jpg',
+        about_eyebrow: siteSettingsForm.about_eyebrow.trim() || "INT'L DJ EXPERIENCE",
+        about_title: siteSettingsForm.about_title.trim() || 'About Me',
+        about_image: siteSettingsForm.about_image.trim() || 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85',
+        about_image_alt: siteSettingsForm.about_image_alt.trim() || 'Int\'L DJ Experience performer',
+        about_paragraphs: Array.isArray(siteSettingsForm.about_paragraphs)
+          ? siteSettingsForm.about_paragraphs.filter(Boolean)
+          : String(siteSettingsForm.about_paragraphs || '')
+              .split(/\n+/)
+              .map((paragraph) => paragraph.trim())
+              .filter(Boolean),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error: saveError } = await getSupabaseClient()
+        .from('site_settings')
+        .upsert(payload, { onConflict: 'id' })
+        .select()
+        .single()
+
+      if (saveError) {
+        if (/does not exist|relation .* does not exist/i.test(saveError.message)) {
+          throw new Error('The site_settings table is missing. Run the SQL from backend/supabase-schema.sql in Supabase, then reload the dashboard.')
+        }
+        throw saveError
+      }
+
+      setSiteSettingsForm({ ...emptySiteSettings, ...data, about_paragraphs: Array.isArray(data.about_paragraphs) ? data.about_paragraphs : String(data.about_paragraphs || '').split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean) })
+    } catch (saveError) {
+      setError(saveError.message)
+    } finally {
+      setIsSavingSiteSettings(false)
+    }
+  }
+
   function handleVideoChange(event) {
     const { name, value } = event.target
     setVideoForm((currentForm) => ({ ...currentForm, [name]: name === 'sort_order' ? Number(value) : value }))
@@ -572,6 +659,47 @@ function AdminDashboard({ user, onSignOut }) {
             </article>
           ))}
         </div>
+      </section>
+      <section className="admin-next-section" aria-labelledby="site-settings-title">
+        <p className="eyebrow">Brand and hero content</p>
+        <h2 id="site-settings-title">Manage your public homepage</h2>
+        <form className="admin-content-form" onSubmit={handleSiteSettingsSubmit}>
+          <label>
+            Hero title
+            <input name="hero_title" value={siteSettingsForm.hero_title} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            Hero subtitle
+            <input name="hero_subtitle" value={siteSettingsForm.hero_subtitle} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            Hero image URL
+            <input name="hero_image" value={siteSettingsForm.hero_image} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            About eyebrow
+            <input name="about_eyebrow" value={siteSettingsForm.about_eyebrow} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            About title
+            <input name="about_title" value={siteSettingsForm.about_title} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            About image URL
+            <input name="about_image" value={siteSettingsForm.about_image} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            About image alt text
+            <input name="about_image_alt" value={siteSettingsForm.about_image_alt} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            About paragraphs
+            <textarea name="about_paragraphs" rows="6" value={Array.isArray(siteSettingsForm.about_paragraphs) ? siteSettingsForm.about_paragraphs.join('\n\n') : siteSettingsForm.about_paragraphs} onChange={(event) => setSiteSettingsForm((currentForm) => ({ ...currentForm, about_paragraphs: event.target.value.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean) }))} required />
+          </label>
+          <button type="submit" disabled={isSavingSiteSettings}>
+            {isSavingSiteSettings ? 'Saving...' : 'Save homepage content'}
+          </button>
+        </form>
       </section>
       <section className="admin-next-section" aria-labelledby="video-management-title">
         <p className="eyebrow">Video spotlight</p>

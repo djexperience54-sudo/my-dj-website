@@ -16,10 +16,24 @@ import { getSupabaseClient } from './lib/supabaseClient'
 import { upcomingEvents } from './data/events'
 import { genres } from './data/genres'
 import { featuredMixtapes } from './data/mixtapes'
-import { djProfile, socialPlatforms } from './data/profile'
+import { socialPlatforms } from './data/profile'
 import { galleryItems, musicPlatforms } from './data/media'
 
 const navigationItems = ['Mixes', 'Sound', 'Events', 'About']
+
+const defaultSiteSettings = {
+  hero_title: "INT'L DJ EXPERIENCE",
+  hero_subtitle: 'Live energy. Deep culture. Unforgettable nights.',
+  hero_image: '/Hero-view.jpg',
+  about_eyebrow: "INT'L DJ EXPERIENCE",
+  about_title: 'About Me',
+  about_image: 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85',
+  about_image_alt: 'Int\'L DJ Experience performer',
+  about_paragraphs: [
+    'Int\'L DJ Experience, known legally as Dapaah Jerry John, is a versatile Ghanaian disk jockey, entertainer, and professional website developer.',
+    'Popularly crowned the Campus DJ, he has built a strong reputation across the Ghanaian entertainment circuit for his high-energy live performances and viral digital mixtapes. Jerry balances his passion for music with a deep background in technology. He is currently studying Information and Communications Technology (ICT) at the University of Education, Winneba (UEW). By uniquely merging his technical skills as a web developer with his musical creativity, Int\'L DJ Experience is paving a distinct path as a modern, self-reliant tech-and-entertainment brand in the digital music era.'
+  ]
+}
 
 function SiteSearch() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -278,11 +292,20 @@ function App() {
   const [events, setEvents] = useState(upcomingEvents)
   const [gallery, setGallery] = useState(galleryItems)
   const [featuredVideo, setFeaturedVideo] = useState(null)
+  const [siteSettings, setSiteSettings] = useState(defaultSiteSettings)
   const [isLoadingMixtapes, setIsLoadingMixtapes] = useState(true)
   const [mixtapeError, setMixtapeError] = useState('')
   const [contentError, setContentError] = useState('')
   const [currentMixtape, setCurrentMixtape] = useState(null)
   const detailId = window.location.pathname.startsWith('/mixes/') ? window.location.pathname.split('/')[2] : ''
+
+  const aboutProfile = {
+    eyebrow: siteSettings.about_eyebrow,
+    name: siteSettings.about_title,
+    image: siteSettings.about_image,
+    imageAlt: siteSettings.about_image_alt,
+    paragraphs: siteSettings.about_paragraphs?.length ? siteSettings.about_paragraphs : defaultSiteSettings.about_paragraphs
+  }
 
   useEffect(() => {
     function handleGenreSelect(event) {
@@ -327,6 +350,22 @@ function App() {
         setEvents(eventResult.data)
         setGallery(galleryResult.data)
 
+        const { data: settingsRow, error: settingsError } = await getSupabaseClient()
+          .from('site_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle()
+
+        if (!settingsError && settingsRow) {
+          setSiteSettings({
+            ...defaultSiteSettings,
+            ...settingsRow,
+            about_paragraphs: Array.isArray(settingsRow.about_paragraphs)
+              ? settingsRow.about_paragraphs
+              : (settingsRow.about_paragraphs ? String(settingsRow.about_paragraphs).split(/\n+/) : defaultSiteSettings.about_paragraphs)
+          })
+        }
+
         const { data: videoRows, error: videoError } = await getSupabaseClient()
           .from('site_videos')
           .select('id, title, url, type, sort_order')
@@ -368,9 +407,9 @@ function App() {
           <div className="site-container hero-layout">
             <div className="hero-copy">
               <p className="eyebrow">Afrobeats & Amapiano DJ</p>
-              <h1 id="hero-title">INT'L DJ EXPERIENCE</h1>
+              <h1 id="hero-title">{siteSettings.hero_title}</h1>
               <p className="hero-description">
-                Live energy. Deep culture. Unforgettable nights.
+                {siteSettings.hero_subtitle}
               </p>
               <div className="hero-actions">
                 <a className="primary-button" href="#mixes">Listen to latest mix</a>
@@ -379,7 +418,7 @@ function App() {
             </div>
             <div className="hero-image">
               <img
-                src="/Hero-view.jpg"
+                src={siteSettings.hero_image || '/Hero-view.jpg'}
                 alt="DJ performing to a crowd"
               />
             </div>
@@ -485,7 +524,7 @@ function App() {
             <EventList events={events} />
           </div>
         </section>
-        <AboutSection profile={djProfile} platforms={socialPlatforms} />
+        <AboutSection profile={aboutProfile} platforms={socialPlatforms} />
         <GalleryPreview items={gallery} />
         <MusicPlatforms platforms={musicPlatforms} />
         <CommentSection />
