@@ -2,8 +2,8 @@ import { apiUrl } from './api'
 const maxFileSize = 400 * 1024 * 1024
 
 const allowedMimeTypes = {
-  image: ['image/jpeg', 'image/png', 'image/webp'],
-  video: ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg']
+  image: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+  video: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/webm', 'audio/m4a']
 }
 
 export function getDownloadUrl(mediaUrl, title) {
@@ -29,8 +29,18 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
     throw new Error('Files must be 400 MB or smaller.')
   }
 
-  if (allowedMimeTypes[resourceType] && !allowedMimeTypes[resourceType].includes(file.type)) {
-    const fileType = resourceType === 'image' ? 'JPG, PNG or WebP image' : 'MP3, WAV, M4A, AAC or OGG audio'
+  const extension = (file.name || '').split('.').pop()?.toLowerCase() || ''
+  const mimeType = (file.type || '').toLowerCase()
+  const allowed = allowedMimeTypes[resourceType] || []
+  const extensionPermitted = resourceType === 'image'
+    ? ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)
+    : ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'webm', 'mp4', 'mpeg', 'x-m4a'].includes(extension)
+
+  const isAudioResource = resourceType === 'video'
+  const acceptsAudioFallback = isAudioResource && (mimeType.startsWith('audio/') || extensionPermitted)
+
+  if (allowed.length > 0 && !allowed.includes(mimeType) && !extensionPermitted && !acceptsAudioFallback) {
+    const fileType = resourceType === 'image' ? 'JPG, PNG, GIF or WebP image' : 'MP3, WAV, M4A, AAC, OGG, FLAC or other common audio formats'
     throw new Error(`Choose a supported ${fileType}.`)
   }
 

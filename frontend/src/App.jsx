@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import AboutSection from './components/AboutSection'
 import BookingSection from './components/BookingSection'
-import CommentSection from './components/CommentSection'
 import EventList from './components/EventList'
 import GalleryPreview from './components/GalleryPreview'
 import GenreNavigation from './components/GenreNavigation'
@@ -527,7 +526,6 @@ function App() {
         <AboutSection profile={aboutProfile} platforms={socialPlatforms} />
         <GalleryPreview items={gallery} />
         <MusicPlatforms platforms={musicPlatforms} />
-        <CommentSection />
         <SupportSection />
         <BookingSection />
       </main>

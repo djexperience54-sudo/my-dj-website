@@ -73,11 +73,14 @@ function AdminDashboard({ user, onSignOut }) {
   const [galleryForm, setGalleryForm] = useState(emptyGalleryItem)
   const [isSavingGallery, setIsSavingGallery] = useState(false)
   const [galleryFile, setGalleryFile] = useState(null)
+  const [heroImageFile, setHeroImageFile] = useState(null)
+  const [aboutImageFile, setAboutImageFile] = useState(null)
   const [siteSettingsForm, setSiteSettingsForm] = useState(emptySiteSettings)
   const [isSavingSiteSettings, setIsSavingSiteSettings] = useState(false)
   const [videos, setVideos] = useState([])
   const [videoForm, setVideoForm] = useState({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
   const [isSavingVideo, setIsSavingVideo] = useState(false)
+  const [comments, setComments] = useState([])
   const [bookings, setBookings] = useState([])
 
   useEffect(() => {
@@ -158,6 +161,16 @@ function AdminDashboard({ user, onSignOut }) {
         }
 
         setVideos(videoRows ?? [])
+        const { data: commentRows, error: commentError } = await getSupabaseClient()
+          .from('comments')
+          .select('id, name, mood, message, created_at')
+          .order('created_at', { ascending: false })
+
+        if (commentError && !/does not exist|relation .* does not exist/i.test(commentError.message)) {
+          throw commentError
+        }
+
+        setComments(commentRows ?? [])
         const { data: bookingRows, error: bookingError } = await getSupabaseClient()
           .from('bookings')
           .select('id, name, email, event_type, message, status, created_at')
@@ -431,14 +444,28 @@ function AdminDashboard({ user, onSignOut }) {
     setIsSavingSiteSettings(true)
 
     try {
+      const { data: sessionData } = await getSupabaseClient().auth.getSession()
+      const accessToken = sessionData.session?.access_token
+
+      if (!accessToken) {
+        throw new Error('Your admin session has expired. Please sign in again.')
+      }
+
+      const heroImage = heroImageFile
+        ? await uploadToCloudinary(heroImageFile, 'site', 'image', accessToken)
+        : siteSettingsForm.hero_image.trim() || '/Hero-view.jpg'
+      const aboutImage = aboutImageFile
+        ? await uploadToCloudinary(aboutImageFile, 'site', 'image', accessToken)
+        : siteSettingsForm.about_image.trim() || 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85'
+
       const payload = {
         id: siteSettingsForm.id || 'default',
         hero_title: siteSettingsForm.hero_title.trim() || "INT'L DJ EXPERIENCE",
         hero_subtitle: siteSettingsForm.hero_subtitle.trim() || 'Live energy. Deep culture. Unforgettable nights.',
-        hero_image: siteSettingsForm.hero_image.trim() || '/Hero-view.jpg',
+        hero_image: heroImage,
         about_eyebrow: siteSettingsForm.about_eyebrow.trim() || "INT'L DJ EXPERIENCE",
         about_title: siteSettingsForm.about_title.trim() || 'About Me',
-        about_image: siteSettingsForm.about_image.trim() || 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85',
+        about_image: aboutImage,
         about_image_alt: siteSettingsForm.about_image_alt.trim() || 'Int\'L DJ Experience performer',
         about_paragraphs: Array.isArray(siteSettingsForm.about_paragraphs)
           ? siteSettingsForm.about_paragraphs.filter(Boolean)
@@ -462,6 +489,8 @@ function AdminDashboard({ user, onSignOut }) {
         throw saveError
       }
 
+      setHeroImageFile(null)
+      setAboutImageFile(null)
       setSiteSettingsForm({ ...emptySiteSettings, ...data, about_paragraphs: Array.isArray(data.about_paragraphs) ? data.about_paragraphs : String(data.about_paragraphs || '').split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean) })
     } catch (saveError) {
       setError(saveError.message)
@@ -626,7 +655,7 @@ function AdminDashboard({ user, onSignOut }) {
           </label>
           <label>
             upload audio
-            <input type="file" accept="audio/*" onChange={(event) => setMixtapeAudioFile(event.target.files?.[0] ?? null)} />
+            <input type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4,.mpeg" onChange={(event) => setMixtapeAudioFile(event.target.files?.[0] ?? null)} />
             {mixtapeAudioFile && <small className="selected-file">Selected: {mixtapeAudioFile.name} ({formatFileSize(mixtapeAudioFile.size)})</small>}
           </label>
           {Object.entries(emptyMixtape).map(([field]) => (
@@ -673,6 +702,11 @@ function AdminDashboard({ user, onSignOut }) {
             <input name="hero_subtitle" value={siteSettingsForm.hero_subtitle} onChange={handleSiteSettingsChange} required />
           </label>
           <label>
+            Upload hero image
+            <input type="file" accept="image/*" onChange={(event) => setHeroImageFile(event.target.files?.[0] ?? null)} />
+            {heroImageFile && <small className="selected-file">Selected: {heroImageFile.name} ({formatFileSize(heroImageFile.size)})</small>}
+          </label>
+          <label>
             Hero image URL
             <input name="hero_image" value={siteSettingsForm.hero_image} onChange={handleSiteSettingsChange} required />
           </label>
@@ -683,6 +717,11 @@ function AdminDashboard({ user, onSignOut }) {
           <label>
             About title
             <input name="about_title" value={siteSettingsForm.about_title} onChange={handleSiteSettingsChange} required />
+          </label>
+          <label>
+            Upload about image
+            <input type="file" accept="image/*" onChange={(event) => setAboutImageFile(event.target.files?.[0] ?? null)} />
+            {aboutImageFile && <small className="selected-file">Selected: {aboutImageFile.name} ({formatFileSize(aboutImageFile.size)})</small>}
           </label>
           <label>
             About image URL
@@ -700,6 +739,22 @@ function AdminDashboard({ user, onSignOut }) {
             {isSavingSiteSettings ? 'Saving...' : 'Save homepage content'}
           </button>
         </form>
+      </section>
+      <section className="admin-next-section" aria-labelledby="comments-title-admin">
+        <p className="eyebrow">Comments inbox</p>
+        <h2 id="comments-title-admin">Listener feedback</h2>
+        <div className="admin-content-list">
+          {comments.length === 0 && <p className="admin-status">No comments yet.</p>}
+          {comments.map((comment) => (
+            <article className="admin-booking-row" key={comment.id}>
+              <div>
+                <strong>{comment.name} - {comment.mood}</strong>
+                <p>{comment.message}</p>
+              </div>
+              <small>{new Date(comment.created_at).toLocaleString()}</small>
+            </article>
+          ))}
+        </div>
       </section>
       <section className="admin-next-section" aria-labelledby="video-management-title">
         <p className="eyebrow">Video spotlight</p>

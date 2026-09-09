@@ -486,6 +486,9 @@ h1 {
 }
 
 .mix-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   overflow: hidden;
   border: 1px solid var(--color-line);
   border-radius: 18px;
@@ -501,6 +504,9 @@ h1 {
 }
 
 .mix-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 20px;
 }
 
@@ -520,6 +526,7 @@ h1 {
 }
 
 .mix-card-content > p:not(.mix-card-genre) {
+  min-height: 4.8em;
   color: var(--color-muted);
   line-height: 1.6;
 }
@@ -529,6 +536,10 @@ h1 {
   margin-top: 18px;
   border-radius: 999px;
   background: #f9f7f3;
+}
+
+.comment-field-label {
+  margin-top: 2px;
 }
 
 .mix-action-row {
@@ -1258,6 +1269,19 @@ h1 {
 }
 
 @media (max-width: 800px) {
+  .comment-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .comment-introduction h2 {
+    margin-bottom: 0;
+  }
+
+  .comment-form {
+    padding: 18px;
+  }
+
   .availability-bar {
     display: none;
   }

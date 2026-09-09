@@ -75,7 +75,7 @@ function CommentSection() {
             </select>
           </label>
 
-          <label>
+          <label className="comment-field-label">
             Comment
             <textarea name="message" value={form.message} onChange={handleChange} rows="4" placeholder="Tell us about the mixtape, the vibe, or the night..." required />
           </label>
