@@ -3,17 +3,17 @@ export const djProfile = {
   name: 'About Me',
   image:
     'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85',
-  imageAlt: 'DJ profile placeholder',
+  imageAlt: 'Int\'L DJ Experience performer',
   paragraphs: [
-    'I am a DJ passionate about African sound, creative mixing and creating moments people remember.',
-    'My sets move across Afrobeats, Amapiano, Afrohouse, Drill / Asakaa, Afrofusion and more, adapting to the crowd while keeping my own identity.'
+    'Int\'L DJ Experience, known legally as Dapaah Jerry John, is a versatile Ghanaian disk jockey, entertainer, and professional website developer.',
+    'Popularly crowned the Campus DJ, he has built a strong reputation across the Ghanaian entertainment circuit for his high-energy live performances and viral digital mixtapes. Jerry balances his passion for music with a deep background in technology. He is currently studying Information and Communications Technology (ICT) at the University of Education, Winneba (UEW). By uniquely merging his technical skills as a web developer with his musical creativity, Int\'L DJ Experience is paving a distinct path as a modern, self-reliant tech-and-entertainment brand in the digital music era.'
   ]
 }
 
 export const socialPlatforms = [
-  { name: 'TikTok', href: 'https://www.tiktok.com/' },
-  { name: 'Instagram', href: 'https://www.instagram.com/' },
-  { name: 'Facebook', href: 'https://www.facebook.com/' },
+  { name: 'TikTok', href: 'https://www.tiktok.com/@intldjexperience?_r=1&_t=ZN-99ZiOSDyejC' },
+  { name: 'Instagram', href: 'https://www.instagram.com/intldjexperience?stkn=MXZraTN3ajdsNW0zdg%3D%3D&utm_source=qr' },
+  { name: 'Facebook', href: 'https://www.facebook.com/share/1JiDypSoqt/?mibextid=wwXIfr' },
   { name: 'YouTube', href: 'https://www.youtube.com/' },
   { name: 'WhatsApp', href: 'https://wa.me/' }
 ]
