@@ -10,17 +10,41 @@ function AdminLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [user, setUser] = useState(null)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
+  const [sessionMessage, setSessionMessage] = useState('')
 
   useEffect(() => {
     const supabase = getSupabaseClient()
 
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession()
+      const session = data.session
+
+      if (!session) {
+        setUser(null)
+        setSessionMessage('')
+        setIsCheckingSession(false)
+        return
+      }
+
+      const expiresAt = Number(session.expires_at || 0) * 1000
+      if (expiresAt <= Date.now()) {
+        await supabase.auth.signOut()
+        setUser(null)
+        setSessionMessage('Your admin session expired. Please sign in again.')
+        setIsCheckingSession(false)
+        return
+      }
+
+      setUser(session.user)
+      setSessionMessage('Session active')
       setIsCheckingSession(false)
-    })
+    }
+
+    checkSession()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setSessionMessage(session ? 'Session active' : '')
     })
 
     return () => authListener.subscription.unsubscribe()
@@ -72,6 +96,7 @@ function AdminLogin() {
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
+            {sessionMessage && <p className="admin-login-success">{sessionMessage}</p>}
             {error && <p className="admin-login-error" role="alert">{error}</p>}
         </form>
       </section>

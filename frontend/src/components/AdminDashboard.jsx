@@ -82,6 +82,39 @@ function AdminDashboard({ user, onSignOut }) {
   const [isSavingVideo, setIsSavingVideo] = useState(false)
   const [comments, setComments] = useState([])
   const [bookings, setBookings] = useState([])
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000
+
+  useEffect(() => {
+    const lastActivityRef = { current: Date.now() }
+
+    function updateActivity() {
+      lastActivityRef.current = Date.now()
+    }
+
+    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, updateActivity))
+
+    const timer = window.setInterval(async () => {
+      const { data } = await getSupabaseClient().auth.getSession()
+      const session = data.session
+
+      if (!session || Number(session.expires_at || 0) * 1000 <= Date.now()) {
+        await getSupabaseClient().auth.signOut()
+        onSignOut()
+        return
+      }
+
+      if (Date.now() - lastActivityRef.current > SESSION_TIMEOUT_MS) {
+        await getSupabaseClient().auth.signOut()
+        onSignOut()
+      }
+    }, 30000)
+
+    return () => {
+      window.clearInterval(timer)
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, updateActivity))
+    }
+  }, [onSignOut])
 
   useEffect(() => {
     async function loadOverview() {
