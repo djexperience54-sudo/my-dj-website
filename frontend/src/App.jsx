@@ -70,9 +70,6 @@ function SiteHeader() {
 
   return (
     <>
-      <div className="availability-bar">
-        Available for events - Accra / Ghana - International bookings
-      </div>
       <header className="site-header">
         <div className="site-container header-content">
           <a className="brand" href="#top">

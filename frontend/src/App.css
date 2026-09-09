@@ -1068,20 +1068,23 @@ h1 {
     right: 10px;
     bottom: 10px;
     left: 10px;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
     padding: 10px 12px;
     border-radius: 18px;
     box-shadow: 0 16px 32px rgb(0 0 0 / 12%);
   }
 
   .music-player-info {
+    grid-column: 1 / -1;
     gap: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-line);
   }
 
   .music-player-info img {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
   }
 
   .music-player audio {
@@ -1092,9 +1095,9 @@ h1 {
 
   .music-player > a,
   .music-player > button {
-    grid-row: 1;
     padding: 8px 10px;
     border-radius: 999px;
+    white-space: nowrap;
   }
 
   .mixes-section {
