@@ -8,9 +8,27 @@ const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require(
 
 const app = express()
 const port = process.env.PORT || 3000
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://intldjexperience.com',
+  'https://www.intldjexperience.com',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173'
+].filter(Boolean)
 
 app.use(express.json({ limit: '1mb' }))
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }))
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+      return
+    }
+
+    callback(new Error('Origin not allowed by CORS'))
+  },
+  credentials: true
+}))
 app.use(helmet())
 
 function asyncRoute(handler) {
