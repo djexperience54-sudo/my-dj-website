@@ -145,8 +145,8 @@ nav a:hover {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 55px;
+  grid-template-columns: 0.96fr 1.04fr;
+  gap: 48px;
   align-items: center;
 }
 
@@ -168,9 +168,9 @@ h1 {
   margin: 16px 0 24px;
   color: var(--color-ink);
   font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(55px, 7vw, 94px);
-  line-height: 0.88;
-  letter-spacing: -0.075em;
+  font-size: clamp(42px, 5.6vw, 82px);
+  line-height: 0.94;
+  letter-spacing: -0.07em;
 }
 
 .hero-description {
@@ -363,6 +363,8 @@ h1 {
 .featured-mixtape-content audio {
   width: 100%;
   margin: 25px 0 18px;
+  border-radius: 999px;
+  background: #f9f7f3;
 }
 
 .featured-mixtape-content .text-link + .text-link {
@@ -372,13 +374,16 @@ h1 {
 .mix-card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 22px;
+  align-items: start;
 }
 
 .mix-card {
   overflow: hidden;
   border: 1px solid var(--color-line);
+  border-radius: 18px;
   background: var(--color-white);
+  box-shadow: 0 8px 24px rgb(15 15 15 / 4%);
 }
 
 .mix-card > img {
@@ -415,6 +420,8 @@ h1 {
 .mix-card audio {
   width: 100%;
   margin-top: 18px;
+  border-radius: 999px;
+  background: #f9f7f3;
 }
 
 .mix-download-link {
@@ -931,6 +938,10 @@ h1 {
 }
 
 @media (max-width: 800px) {
+  .availability-bar {
+    display: none;
+  }
+
   .header-content {
     min-height: 68px;
   }
@@ -984,14 +995,41 @@ h1 {
 
   .hero-layout {
     grid-template-columns: 1fr;
+    gap: 22px;
   }
 
   .hero-section {
-    padding: 64px 0 80px;
+    padding: 28px 0 44px;
+  }
+
+  .hero-copy {
+    order: 2;
+  }
+
+  .hero-copy .eyebrow {
+    display: none;
+  }
+
+  .hero-copy h1 {
+    margin: 0 0 14px;
+    font-size: clamp(30px, 11vw, 48px);
+    line-height: 0.96;
+    letter-spacing: -0.06em;
   }
 
   .hero-image {
-    height: 430px;
+    order: 1;
+    height: 400px;
+    margin-bottom: 0;
+  }
+
+  .hero-image span {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-width: none;
+    width: auto;
+    font-size: 11px;
   }
 
   .section-heading {
@@ -1004,6 +1042,17 @@ h1 {
     grid-template-columns: 1fr;
     gap: 28px;
     margin-bottom: 40px;
+  }
+
+  .featured-mixtape-content h3 {
+    margin-top: 8px;
+  }
+
+  .featured-mixtape-content audio,
+  .mix-card audio,
+  .mix-detail-layout audio {
+    margin-top: 14px;
+    margin-bottom: 14px;
   }
 
   .mix-detail-section {
@@ -1020,16 +1069,32 @@ h1 {
     bottom: 10px;
     left: 10px;
     grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 18px;
+    box-shadow: 0 16px 32px rgb(0 0 0 / 12%);
+  }
+
+  .music-player-info {
+    gap: 8px;
+  }
+
+  .music-player-info img {
+    width: 40px;
+    height: 40px;
   }
 
   .music-player audio {
     grid-column: 1 / -1;
     grid-row: 2;
+    min-height: 34px;
   }
 
   .music-player > a,
   .music-player > button {
     grid-row: 1;
+    padding: 8px 10px;
+    border-radius: 999px;
   }
 
   .mixes-section {
@@ -1046,6 +1111,7 @@ h1 {
 
   .mix-card-grid {
     grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .sound-section,
