@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import AboutSection from './components/AboutSection'
 import BookingSection from './components/BookingSection'
+import CommentSection from './components/CommentSection'
 import EventList from './components/EventList'
 import GalleryPreview from './components/GalleryPreview'
 import GenreNavigation from './components/GenreNavigation'
@@ -165,12 +166,47 @@ function MixtapeDetail({ mixtape, onPlay }) {
           {mixtape.audio_url ? (
             <>
               <audio controls src={mixtape.audio_url} aria-label={`Play ${mixtape.title}`} />
-              <button className="player-launch-link" type="button" onClick={() => onPlay(mixtape)}>Play in site player</button>
-              <a className="primary-button" href={getDownloadUrl(mixtape.audio_url, mixtape.title)} download>Download mix</a>
+              <div className="mix-detail-actions">
+                <button className="mix-action-button mix-action-button--secondary" type="button" onClick={() => onPlay(mixtape)}>Play in site player</button>
+                <a className="mix-action-button mix-action-button--primary" href={getDownloadUrl(mixtape.audio_url, mixtape.title)} download>Download mix</a>
+              </div>
             </>
           ) : (
             <p className="data-status">Audio is not available for this mix yet.</p>
           )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SupportSection() {
+  return (
+    <section className="support-section" id="support" aria-labelledby="support-title">
+      <div className="site-container support-content">
+        <div className="support-header">
+          <p className="eyebrow">Support the sound</p>
+          <h2 id="support-title">Show Some Love to the DJ</h2>
+        </div>
+        <div className="support-grid">
+          <a className="support-card support-card--momo" href="tel:+233558520091" aria-label="Send mobile money to +233558520091">
+            <span className="support-icon" aria-hidden="true">💸</span>
+            <span className="support-label">MTN Mobile Money</span>
+            <strong>0558520091</strong>
+            <small>+233 55 852 0091</small>
+          </a>
+          <a
+            className="support-card support-card--paypal"
+            href="https://www.paypal.com/paypalme/DapaahJerryJohn?v=1&utm_source=unp&utm_medium=email&utm_campaign=RT000481&utm_unptid=00053b52-5b9a-11f1-80c0-a3cadf221da4&ppid=RT000481&cnac=AE&rsta=en_US%28en-AE%29&cust=CTQ8PK3AYDEKN&unptid=00053b52-5b9a-11f1-80c0-a3cadf221da4&calc=66639baf653ce&unp_tpcid=ppme-social-business-profile-created&page=main%3Aemail%3ART000481&pgrp=main%3Aemail&e=cl&mchn=em&s=ci&mail=sys&appVersion=1.414.0&tenant_name=PAYPAL&xt=175543%2C104038%2C180658&link_ref=paypalme_dapaahjerryjohn"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Send money through PayPal"
+          >
+            <span className="support-icon" aria-hidden="true">💙</span>
+            <span className="support-label">PayPal</span>
+            <strong>Support the DJ</strong>
+            <small>paypal.me/DapaahJerryJohn</small>
+          </a>
         </div>
       </div>
     </section>
@@ -268,9 +304,20 @@ function App() {
     <div id="top">
       <SiteHeader />
       <main>
-        <section className="hero-section" aria-label="Featured DJ image">
-          <div className="site-container hero-layout hero-layout--image-only">
-            <div className="hero-image hero-image--full">
+        <section className="hero-section" aria-labelledby="hero-title">
+          <div className="site-container hero-layout">
+            <div className="hero-copy">
+              <p className="eyebrow">Afrobeats & Amapiano DJ</p>
+              <h1 id="hero-title">Live energy. Deep culture. Unforgettable nights.</h1>
+              <p className="hero-description">
+                Bringing the rhythm, movement, and atmosphere that keeps the dance floor packed from the first song to the final encore.
+              </p>
+              <div className="hero-actions">
+                <a className="primary-button" href="#mixes">Listen to latest mix</a>
+                <a className="secondary-button" href="#book">Book for an event</a>
+              </div>
+            </div>
+            <div className="hero-image">
               <img
                 src="/Hero-view.jpg"
                 alt="DJ performing to a crowd"
@@ -278,15 +325,15 @@ function App() {
             </div>
           </div>
         </section>
-        {featuredVideo && (
-          <section className="video-section" aria-labelledby="video-title">
-            <div className="site-container">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">Live moment</p>
-                  <h2 id="video-title">Featured Video</h2>
-                </div>
+        <section className="video-section" aria-labelledby="video-title">
+          <div className="site-container">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Live moment</p>
+                <h2 id="video-title">Featured Video</h2>
               </div>
+            </div>
+            {featuredVideo ? (
               <div className="video-card">
                 {featuredVideo.url.includes('youtube.com') || featuredVideo.url.includes('youtu.be') || featuredVideo.url.includes('vimeo.com') ? (
                   <iframe
@@ -305,9 +352,24 @@ function App() {
                   <h3>{featuredVideo.title}</h3>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            ) : (
+              <div className="video-card video-card--placeholder" aria-label="Video placeholder preview">
+                <div className="video-placeholder">
+                  <span className="video-play-button">▶</span>
+                  <div>
+                    <strong>Video slot placeholder</strong>
+                    <small>Add your featured performance clip here</small>
+                  </div>
+                </div>
+                <div className="video-copy">
+                  <p className="eyebrow">Spotlight</p>
+                  <h3>Featured clip</h3>
+                  <p className="video-placeholder-text">This preview shows where your live video will appear on the homepage.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
         <section className="mixes-section" aria-labelledby="mixes-title">
           <div className="site-container">
             <div className="section-heading">
@@ -366,6 +428,8 @@ function App() {
         <AboutSection profile={djProfile} platforms={socialPlatforms} />
         <GalleryPreview items={gallery} />
         <MusicPlatforms platforms={musicPlatforms} />
+        <CommentSection />
+        <SupportSection />
         <BookingSection />
       </main>
       <SiteFooter />

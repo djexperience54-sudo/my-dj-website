@@ -145,13 +145,9 @@ nav a:hover {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 0.96fr 1.04fr;
   gap: 48px;
   align-items: center;
-}
-
-.hero-layout--image-only {
-  display: block;
 }
 
 .hero-copy {
@@ -272,6 +268,10 @@ h1 {
   background: #f7f5f2;
 }
 
+.video-card--placeholder {
+  background: linear-gradient(135deg, #f7f2e8, #f3f5f7);
+}
+
 .video-card iframe,
 .video-card video {
   width: 100%;
@@ -281,8 +281,63 @@ h1 {
   background: #000;
 }
 
+.video-placeholder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f1f1f, #41382e);
+  color: var(--color-white);
+  overflow: hidden;
+}
+
+.video-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent, rgb(0 0 0 / 25%));
+}
+
+.video-placeholder > * {
+  position: relative;
+  z-index: 1;
+}
+
+.video-play-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  margin-right: 18px;
+  border: 2px solid rgb(255 255 255 / 80%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 10%);
+  font-size: 24px;
+}
+
+.video-placeholder strong,
+.video-placeholder small {
+  display: block;
+}
+
+.video-placeholder small {
+  margin-top: 6px;
+  color: rgb(255 255 255 / 80%);
+  font-size: 12px;
+}
+
 .video-copy {
   min-width: 0;
+}
+
+.video-placeholder-text {
+  margin-top: 10px;
+  color: var(--color-muted);
+  line-height: 1.6;
 }
 
 .video-copy h3 {
@@ -471,14 +526,45 @@ h1 {
   background: #f9f7f3;
 }
 
-.mix-download-link {
-  display: inline-block;
-  margin-top: 14px;
+.mix-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.mix-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-ink);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.mix-action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgb(0 0 0 / 8%);
+}
+
+.mix-action-button--primary {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.mix-action-button--secondary {
+  background: var(--color-white);
+  color: var(--color-ink);
 }
 
 .mix-detail-link {
   display: block;
-  margin-top: 12px;
+  margin-top: 16px;
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 700;
@@ -535,8 +621,11 @@ h1 {
   margin: 28px 0 22px;
 }
 
-.mix-detail-layout .primary-button {
-  display: inline-block;
+.mix-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .player-launch-link {
@@ -854,6 +943,88 @@ h1 {
   border-left: 1px solid var(--color-line);
 }
 
+.support-section {
+  padding: 82px 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.support-content {
+  display: grid;
+  gap: 26px;
+}
+
+.support-header h2 {
+  margin: 8px 0 0;
+  color: var(--color-ink);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.support-card {
+  display: grid;
+  gap: 8px;
+  min-height: 170px;
+  padding: 24px 22px;
+  border: 1px solid var(--color-line);
+  border-radius: 22px;
+  background: #f7f5f2;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.support-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgb(18 18 18 / 6%);
+  border-color: rgb(17 17 17 / 18%);
+}
+
+.support-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 60%);
+  font-size: 21px;
+}
+
+.support-label {
+  color: var(--color-gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.support-card strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(24px, 3vw, 36px);
+  letter-spacing: -0.04em;
+}
+
+.support-card small {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.support-card--momo {
+  background: linear-gradient(135deg, #f5ecda, #f9f7f2);
+}
+
+.support-card--paypal {
+  background: linear-gradient(135deg, #eef6ff, #f7f5f2);
+}
+
 .booking-section {
   padding: 82px 0;
   border-top: 1px solid var(--color-line);
@@ -899,12 +1070,43 @@ h1 {
   text-decoration: none;
 }
 
-.booking-form {
-  display: grid;
-  flex: 1 1 0;
-  gap: 12px;
+.comment-section {
+  padding: 82px 0;
+  border-top: 1px solid var(--color-line);
 }
 
+.comment-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.comment-introduction h2 {
+  margin: 8px 0 18px;
+  color: var(--color-ink);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.comment-introduction p:not(.eyebrow) {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.comment-form {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: #f7f5f2;
+}
+
+.comment-form label,
 .booking-form label {
   display: grid;
   gap: 5px;
@@ -913,6 +1115,9 @@ h1 {
   font-weight: 700;
 }
 
+.comment-form input,
+.comment-form textarea,
+.comment-form select,
 .booking-form input,
 .booking-form textarea {
   width: 100%;
@@ -924,10 +1129,12 @@ h1 {
   font: inherit;
 }
 
+.comment-form textarea,
 .booking-form textarea {
   resize: vertical;
 }
 
+.comment-form button,
 .booking-form button {
   justify-self: start;
   padding: 12px 18px;
@@ -952,6 +1159,18 @@ h1 {
   color: #a33a32;
   font-size: 13px;
   font-weight: 700;
+}
+
+.comment-form button:disabled,
+.booking-form button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.booking-form {
+  display: grid;
+  flex: 1 1 0;
+  gap: 12px;
 }
 
 .booking-form button:disabled {

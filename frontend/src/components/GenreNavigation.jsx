@@ -4,7 +4,6 @@ function GenreNavigation({ genres }) {
       {genres.map((genre) => (
         <a href={`#genre-${genre.slug}`} key={genre.name}>
           <span>{genre.name}</span>
-          <span>{String(genre.count).padStart(2, '0')}</span>
         </a>
       ))}
     </nav>

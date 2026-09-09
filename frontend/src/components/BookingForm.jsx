@@ -38,8 +38,10 @@ function BookingForm() {
         body: JSON.stringify(form)
       })
 
+      const result = await response.json().catch(() => ({}))
+
       if (!response.ok) {
-        throw new Error('Your enquiry could not be sent. Please try again.')
+        throw new Error(result.error || 'Your enquiry could not be sent. Please try again.')
       }
 
       setSubmitted(true)
@@ -74,7 +76,7 @@ function BookingForm() {
       </button>
       {submitted && (
         <p className="form-status" role="status">
-          Thanks. Your enquiry has been sent.
+          Your message has been sent successfully. I will reply within 24 hours.
         </p>
       )}
       {error && <p className="form-error" role="alert">{error}</p>}

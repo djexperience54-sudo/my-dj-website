@@ -53,4 +53,14 @@ async function createBooking(booking) {
   return data
 }
 
-module.exports = { createBooking, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes }
+async function createComment(comment) {
+  const { data, error } = await supabase.from('comments').insert(comment).select().single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+module.exports = { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes }

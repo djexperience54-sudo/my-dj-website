@@ -3,8 +3,10 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes } = require('./database')
+const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
+const { sendBookingEmail } = require('./email')
+const { sanitizeBookingPayload, sanitizeCommentPayload } = require('./validation')
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -64,22 +66,57 @@ app.get('/api/gallery', asyncRoute(async (request, response) => {
 }))
 
 app.post('/api/bookings', asyncRoute(async (request, response) => {
-  const { name, email, eventType, message } = request.body || {}
+  try {
+    const payload = sanitizeBookingPayload(request.body)
+    const booking = await createBooking({
+      name: payload.name,
+      email: payload.email,
+      event_type: payload.eventType,
+      message: payload.message
+    })
 
-  if (!name || !email || !eventType || !message) {
-    return response.status(400).json({ error: 'Name, email, event type and message are required.' })
+    const recipient = process.env.SMTP_TO || 'djexperience54@gmail.com'
+    const emailPayload = {
+      to: recipient,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || 'djexperience54@gmail.com',
+      name: payload.name,
+      email: payload.email,
+      eventType: payload.eventType,
+      message: payload.message
+    }
+
+    try {
+      await sendBookingEmail(emailPayload)
+    } catch (emailError) {
+      console.error('Booking email delivery failed:', emailError.message)
+      return response.status(500).json({
+        error: 'Your booking was saved, but the email delivery is not configured yet. Add the Gmail SMTP app password to finish sending mail.'
+      })
+    }
+
+    response.status(201).json({
+      success: true,
+      message: 'Your booking request has been sent successfully. I will reply within 24 hours.',
+      data: booking
+    })
+  } catch (error) {
+    response.status(400).json({ error: error.message })
   }
+}))
 
-  if (!isValidEmail(email) || email.length > 254) {
-    return response.status(400).json({ error: 'Enter a valid email address.' })
+app.post('/api/comments', asyncRoute(async (request, response) => {
+  try {
+    const payload = sanitizeCommentPayload(request.body)
+    const comment = await createComment(payload)
+
+    response.status(201).json({
+      success: true,
+      message: 'Your comment has been posted successfully.',
+      data: comment
+    })
+  } catch (error) {
+    response.status(400).json({ error: error.message })
   }
-
-  if ([name, eventType, message].some((value) => typeof value !== 'string' || value.trim().length > 5000)) {
-    return response.status(400).json({ error: 'Booking fields are too long.' })
-  }
-
-  const booking = await createBooking({ name, email, event_type: eventType, message })
-  response.status(201).json({ data: booking })
 }))
 
 app.post('/api/media/signature', asyncRoute(async (request, response) => {
