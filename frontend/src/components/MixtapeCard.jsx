@@ -1,5 +1,15 @@
 import { getDownloadUrl } from '../lib/cloudinaryUpload'
 
+function stopOtherAudio(event) {
+  const activeAudioElements = document.querySelectorAll('audio')
+
+  activeAudioElements.forEach((audioElement) => {
+    if (audioElement !== event.currentTarget) {
+      audioElement.pause()
+    }
+  })
+}
+
 function MixtapeCard({ mixtape, onPlay }) {
   return (
     <article className="mix-card">
@@ -8,7 +18,7 @@ function MixtapeCard({ mixtape, onPlay }) {
         <p className="mix-card-genre">{mixtape.genre}</p>
         <h2>{mixtape.title}</h2>
         <p>{mixtape.description}</p>
-        <audio controls src={mixtape.audio_url || undefined} aria-label={`Play ${mixtape.title}`} />
+        <audio controls src={mixtape.audio_url || undefined} aria-label={`Play ${mixtape.title}`} onPlay={stopOtherAudio} />
         <div className="mix-action-row">
           {mixtape.audio_url && onPlay && (
             <button className="mix-action-button mix-action-button--secondary" type="button" onClick={() => onPlay(mixtape)}>

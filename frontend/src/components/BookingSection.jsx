@@ -6,7 +6,7 @@ function BookingSection() {
       <div className="site-container booking-content">
         <div className="booking-introduction">
           <p className="eyebrow">Let&apos;s create the moment</p>
-          <h2 id="booking-title">Book the Experience.</h2>
+          <h2 id="booking-title">Book Int&apos;L DJ Experience</h2>
           <p>Events - Clubs - Brands - Private parties - Festivals</p>
         </div>
         <BookingForm />

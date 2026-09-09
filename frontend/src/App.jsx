@@ -115,7 +115,7 @@ function MixtapeLibrary({ mixtapes, onPlay }) {
   })
 
   return (
-    <section className="library-section" aria-labelledby="library-title">
+    <section id="mixtape-library" className="library-section" aria-labelledby="library-title">
       <div className="site-container">
         <div className="section-heading">
           <div>
@@ -136,7 +136,7 @@ function MixtapeLibrary({ mixtapes, onPlay }) {
           </label>
           <label>
             Genre
-            <select value={selectedGenre} onChange={(event) => setSelectedGenre(event.target.value)}>
+            <select data-genre-filter value={selectedGenre} onChange={(event) => setSelectedGenre(event.target.value)}>
               {genresInLibrary.map((genre) => <option key={genre}>{genre}</option>)}
             </select>
           </label>
@@ -181,17 +181,14 @@ function MixtapeDetail({ mixtape, onPlay }) {
 }
 
 function SupportSection() {
-  async function handleMomoClick(event) {
-    event.preventDefault()
+  async function handleMomoClick() {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText('0558520091')
       }
     } catch (error) {
-      // Ignore clipboard failures and continue to the phone call flow.
+      // Ignore clipboard failures and keep the number visible to the user.
     }
-
-    window.location.href = 'tel:+233558520091'
   }
 
   return (
@@ -202,12 +199,12 @@ function SupportSection() {
           <h2 id="support-title">Show Some Love to the DJ</h2>
         </div>
         <div className="support-grid">
-          <a className="support-card support-card--momo" href="tel:+233558520091" aria-label="Send mobile money to +233558520091" onClick={handleMomoClick}>
+          <button type="button" className="support-card support-card--momo" aria-label="Copy mobile money number 0558520091" onClick={handleMomoClick}>
             <span className="support-icon" aria-hidden="true">💸</span>
             <span className="support-label">MTN Mobile Money</span>
             <strong>0558520091</strong>
-            <small>Dapaah Jerry John</small>
-          </a>
+            <small>Tap to copy the number</small>
+          </button>
           <a
             className="support-card support-card--paypal"
             href="https://www.paypal.com/paypalme/DapaahJerryJohn?v=1&utm_source=unp&utm_medium=email&utm_campaign=RT000481&utm_unptid=00053b52-5b9a-11f1-80c0-a3cadf221da4&ppid=RT000481&cnac=AE&rsta=en_US%28en-AE%29&cust=CTQ8PK3AYDEKN&unptid=00053b52-5b9a-11f1-80c0-a3cadf221da4&calc=66639baf653ce&unp_tpcid=ppme-social-business-profile-created&page=main%3Aemail%3ART000481&pgrp=main%3Aemail&e=cl&mchn=em&s=ci&mail=sys&appVersion=1.414.0&tenant_name=PAYPAL&xt=175543%2C104038%2C180658&link_ref=paypalme_dapaahjerryjohn"
@@ -246,6 +243,36 @@ function getVideoEmbedUrl(videoUrl) {
   return normalizedUrl
 }
 
+function ScrollHintButton() {
+  const [isAtTop, setIsAtTop] = useState(true)
+
+  useEffect(() => {
+    function handleScroll() {
+      const distanceFromBottom = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY)
+      setIsAtTop(distanceFromBottom < 120 && window.scrollY < 120)
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  function handleScrollAction() {
+    if (window.scrollY < 180) {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+      return
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  return (
+    <button type="button" className="scroll-hint-button" onClick={handleScrollAction} aria-label={isAtTop ? 'Scroll to bottom' : 'Scroll to top'}>
+      {isAtTop ? '↓' : '↑'}
+    </button>
+  )
+}
+
 function App() {
   const [mixtapes, setMixtapes] = useState(featuredMixtapes)
   const [events, setEvents] = useState(upcomingEvents)
@@ -256,6 +283,26 @@ function App() {
   const [contentError, setContentError] = useState('')
   const [currentMixtape, setCurrentMixtape] = useState(null)
   const detailId = window.location.pathname.startsWith('/mixes/') ? window.location.pathname.split('/')[2] : ''
+
+  useEffect(() => {
+    function handleGenreSelect(event) {
+      const targetGenre = event.detail
+      const select = document.querySelector('[data-genre-filter]')
+      const library = document.getElementById('mixtape-library')
+
+      if (select) {
+        select.value = targetGenre
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+      }
+
+      if (library) {
+        library.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+
+    window.addEventListener('genre-select', handleGenreSelect)
+    return () => window.removeEventListener('genre-select', handleGenreSelect)
+  }, [])
 
   useEffect(() => {
     async function loadContent() {
@@ -447,6 +494,7 @@ function App() {
       </main>
       <SiteFooter />
       <MusicPlayer mixtape={currentMixtape} onClose={() => setCurrentMixtape(null)} />
+      <ScrollHintButton />
     </div>
   )
 }

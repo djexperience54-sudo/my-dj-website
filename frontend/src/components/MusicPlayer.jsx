@@ -1,5 +1,15 @@
 import { getDownloadUrl } from '../lib/cloudinaryUpload'
 
+function stopOtherAudio(event) {
+  const activeAudioElements = document.querySelectorAll('audio')
+
+  activeAudioElements.forEach((audioElement) => {
+    if (audioElement !== event.currentTarget) {
+      audioElement.pause()
+    }
+  })
+}
+
 function MusicPlayer({ mixtape, onClose }) {
   if (!mixtape) {
     return null
@@ -15,7 +25,7 @@ function MusicPlayer({ mixtape, onClose }) {
         </div>
       </div>
       {mixtape.audio_url ? (
-        <audio controls autoPlay src={mixtape.audio_url} aria-label={`Play ${mixtape.title}`} />
+        <audio controls autoPlay src={mixtape.audio_url} aria-label={`Play ${mixtape.title}`} onPlay={stopOtherAudio} />
       ) : (
         <span className="music-player-unavailable">Audio unavailable</span>
       )}

@@ -58,9 +58,6 @@ function CommentSection() {
         <div className="comment-introduction">
           <p className="eyebrow">Listener feedback</p>
           <h2 id="comments-title">Tell us what you felt.</h2>
-          <p>
-            Share your honest reaction to the mix. Tell us what was good, what stood out, or what kind of energy you want next.
-          </p>
         </div>
 
         <form className="comment-form" onSubmit={handleSubmit}>
