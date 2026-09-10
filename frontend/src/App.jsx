@@ -199,7 +199,7 @@ function SupportSection() {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText('0558520091')
       }
-    } catch (error) {
+    } catch {
       // Ignore clipboard failures and keep the number visible to the user.
     }
   }

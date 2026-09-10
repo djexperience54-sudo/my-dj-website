@@ -1,4 +1,5 @@
 const defaultLocalApiUrl = 'http://localhost:3000'
+const defaultProductionApiUrl = 'https://my-dj-website.onrender.com'
 
 export const apiBaseUrl = (() => {
   const configuredUrl = import.meta.env.VITE_API_URL
@@ -11,7 +12,7 @@ export const apiBaseUrl = (() => {
     return defaultLocalApiUrl
   }
 
-  return ''
+  return defaultProductionApiUrl
 })()
 
 export function apiUrl(path) {

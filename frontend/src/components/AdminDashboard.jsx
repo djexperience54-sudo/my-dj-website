@@ -48,6 +48,8 @@ const emptySiteSettings = {
   ]
 }
 
+const sessionTimeoutMs = 2 * 60 * 1000
+
 function formatFileSize(bytes) {
   if (!bytes) {
     return ''
@@ -82,8 +84,6 @@ function AdminDashboard({ user, onSignOut }) {
   const [isSavingVideo, setIsSavingVideo] = useState(false)
   const [comments, setComments] = useState([])
   const [bookings, setBookings] = useState([])
-  const SESSION_TIMEOUT_MS = 2 * 60 * 1000
-
   useEffect(() => {
     const lastActivityRef = { current: Date.now() }
 
@@ -104,7 +104,7 @@ function AdminDashboard({ user, onSignOut }) {
         return
       }
 
-      if (Date.now() - lastActivityRef.current > SESSION_TIMEOUT_MS) {
+      if (Date.now() - lastActivityRef.current > sessionTimeoutMs) {
         await getSupabaseClient().auth.signOut()
         onSignOut()
       }

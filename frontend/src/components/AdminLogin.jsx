@@ -13,7 +13,6 @@ function AdminLogin() {
   const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [sessionMessage, setSessionMessage] = useState('')
   const [verificationStep, setVerificationStep] = useState(false)
-  const [pendingUser, setPendingUser] = useState(null)
 
   useEffect(() => {
     const supabase = getSupabaseClient()
@@ -59,13 +58,12 @@ function AdminLogin() {
     setIsSubmitting(true)
 
     try {
-      const { data, error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email, password })
+      const { error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email, password })
 
       if (signInError) {
         throw signInError
       }
 
-      setPendingUser(data.user)
       setVerificationStep(true)
       setPassword('')
       setVerifyPassword('')
@@ -93,7 +91,6 @@ function AdminLogin() {
       }
 
       setUser(data.user)
-      setPendingUser(null)
       setVerificationStep(false)
       setSessionMessage('Session active')
     } catch (verifyError) {
@@ -107,7 +104,6 @@ function AdminLogin() {
     return <AdminDashboard user={user} onSignOut={() => {
       setUser(null)
       setVerificationStep(false)
-      setPendingUser(null)
       setSessionMessage('Admin locked for inactivity. Please sign in again.')
     }} />
   }
@@ -134,7 +130,6 @@ function AdminLogin() {
             </button>
             <button type="button" className="admin-change-user-button" onClick={() => {
               setVerificationStep(false)
-              setPendingUser(null)
               setVerifyPassword('')
               setError('')
             }}>
