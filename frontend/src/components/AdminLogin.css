@@ -291,6 +291,28 @@
   overflow-wrap: anywhere;
 }
 
+.admin-upload-progress {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  color: #6d6f73;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-upload-progress-track {
+  height: 8px;
+  overflow: hidden;
+  background: #e9e9e7;
+}
+
+.admin-upload-progress-bar {
+  height: 100%;
+  min-width: 2%;
+  background: #b58a45;
+  transition: width 160ms ease;
+}
+
 .admin-content-list {
   display: grid;
   margin-top: 24px;

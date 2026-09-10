@@ -38,7 +38,7 @@ export async function extractEmbeddedArtwork(audioFile) {
   return new File([cover.data], 'embedded-artwork', { type: cover.format })
 }
 
-export async function uploadToCloudinary(file, folder, resourceType, accessToken, onStatus) {
+export async function uploadToCloudinary(file, folder, resourceType, accessToken, onStatus, onProgress) {
   if (!file) {
     throw new Error('Choose a file before uploading.')
   }
@@ -100,15 +100,30 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
   formData.append('folder', signatureResult.data.folder)
 
   onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}...`)
-  const uploadResponse = await fetch(
-    `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`,
-    { method: 'POST', body: formData }
-  )
-  const uploadResult = await uploadResponse.json()
+  const uploadResult = await new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open('POST', `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`)
+    request.responseType = 'json'
 
-  if (!uploadResponse.ok) {
-    throw new Error(uploadResult.error?.message || 'The media upload failed.')
-  }
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        onProgress?.(progress)
+        onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}... ${progress}%`)
+      }
+    })
+    request.addEventListener('load', () => {
+      if (request.status >= 200 && request.status < 300) {
+        resolve(request.response)
+        return
+      }
+
+      reject(new Error(request.response?.error?.message || 'The media upload failed.'))
+    })
+    request.addEventListener('error', () => reject(new Error('The media upload failed. Check your connection and try again.')))
+    request.addEventListener('abort', () => reject(new Error('The media upload was cancelled.')))
+    request.send(formData)
+  })
 
   return uploadResult.secure_url
 }

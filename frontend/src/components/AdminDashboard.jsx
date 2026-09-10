@@ -66,6 +66,7 @@ function AdminDashboard({ user, onSignOut }) {
   const [mixtapeForm, setMixtapeForm] = useState(emptyMixtape)
   const [isSavingMixtape, setIsSavingMixtape] = useState(false)
   const [mixtapeStatus, setMixtapeStatus] = useState('')
+  const [mixtapeUploadProgress, setMixtapeUploadProgress] = useState(null)
   const [mixtapeArtworkFile, setMixtapeArtworkFile] = useState(null)
   const [mixtapeAudioFile, setMixtapeAudioFile] = useState(null)
   const [events, setEvents] = useState([])
@@ -253,6 +254,7 @@ function AdminDashboard({ user, onSignOut }) {
     setMixtapeStatus('')
     setMixtapeArtworkFile(null)
     setMixtapeAudioFile(null)
+    setMixtapeUploadProgress(null)
   }
 
   async function handleMixtapeSubmit(event) {
@@ -260,6 +262,7 @@ function AdminDashboard({ user, onSignOut }) {
     setError('')
     setMixtapeStatus('Uploading files and saving mixtape...')
     setIsSavingMixtape(true)
+    setMixtapeUploadProgress(null)
 
     try {
       const { data: sessionData } = await getSupabaseClient().auth.getSession()
@@ -279,15 +282,16 @@ function AdminDashboard({ user, onSignOut }) {
       }
 
       const artwork = mixtapeArtworkFile
-        ? await uploadToCloudinary(mixtapeArtworkFile, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status))
+        ? await uploadToCloudinary(mixtapeArtworkFile, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status), setMixtapeUploadProgress)
         : embeddedArtwork
-          ? await uploadToCloudinary(embeddedArtwork, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status))
+          ? await uploadToCloudinary(embeddedArtwork, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status), setMixtapeUploadProgress)
           : mixtapeForm.artwork
       if (mixtapeAudioFile) {
         setMixtapeStatus('Artwork uploaded. Preparing audio upload...')
+        setMixtapeUploadProgress(0)
       }
       const audioUrl = mixtapeAudioFile
-        ? await uploadToCloudinary(mixtapeAudioFile, 'mixtapes', 'video', accessToken, (status) => setMixtapeStatus(status))
+        ? await uploadToCloudinary(mixtapeAudioFile, 'mixtapes', 'video', accessToken, (status) => setMixtapeStatus(status), setMixtapeUploadProgress)
         : mixtapeForm.audio_url || null
       setMixtapeStatus('Saving mixtape record...')
       const { data, error: saveError } = await getSupabaseClient()
@@ -309,10 +313,12 @@ function AdminDashboard({ user, onSignOut }) {
       setMixtapeForm(emptyMixtape)
       setMixtapeArtworkFile(null)
       setMixtapeAudioFile(null)
+      setMixtapeUploadProgress(null)
       setMixtapeStatus('Mixtape saved successfully.')
     } catch (saveError) {
       setError(saveError.message)
       setMixtapeStatus(`Save failed: ${saveError.message}`)
+      setMixtapeUploadProgress(null)
     } finally {
       setIsSavingMixtape(false)
     }
@@ -719,6 +725,14 @@ function AdminDashboard({ user, onSignOut }) {
           <button type="submit" disabled={isSavingMixtape}>
             {isSavingMixtape ? 'Saving...' : 'Save mixtape'}
           </button>
+          {isSavingMixtape && (
+            <div className="admin-upload-progress" role="status" aria-live="polite">
+              <div className="admin-upload-progress-track">
+                <div className="admin-upload-progress-bar" style={{ width: `${mixtapeUploadProgress ?? 0}%` }} />
+              </div>
+              <span>{mixtapeUploadProgress === null ? 'Preparing upload...' : `${mixtapeUploadProgress}% uploaded`}</span>
+            </div>
+          )}
           {mixtapeForm.id && <button className="admin-cancel-button" type="button" onClick={cancelMixtapeEdit}>Cancel edit</button>}
           {mixtapeStatus && <p className="admin-form-status" role="status">{mixtapeStatus}</p>}
         </form>
