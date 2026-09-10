@@ -1,5 +1,7 @@
 import { apiUrl } from './api'
 const maxFileSize = 400 * 1024 * 1024
+const signatureTimeoutMs = 30000
+const uploadTimeoutMs = 15 * 60 * 1000
 
 const allowedMimeTypes = {
   image: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
@@ -20,7 +22,7 @@ export function getDownloadUrl(mediaUrl, title) {
   return mediaUrl.replace('/upload/', `/upload/fl_attachment:${fileName}/`)
 }
 
-export async function uploadToCloudinary(file, folder, resourceType, accessToken) {
+export async function uploadToCloudinary(file, folder, resourceType, accessToken, onStatus) {
   if (!file) {
     throw new Error('Choose a file before uploading.')
   }
@@ -44,14 +46,29 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
     throw new Error(`Choose a supported ${fileType}.`)
   }
 
-  const signatureResponse = await fetch(apiUrl('/api/media/signature'), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ folder, resourceType })
-  })
+  onStatus?.('Preparing secure upload...')
+  const signatureController = new AbortController()
+  const signatureTimer = window.setTimeout(() => signatureController.abort(), signatureTimeoutMs)
+
+  let signatureResponse
+  try {
+    signatureResponse = await fetch(apiUrl('/api/media/signature'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ folder, resourceType }),
+      signal: signatureController.signal
+    })
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('The upload service did not respond. Please try again.', { cause: error })
+    }
+    throw error
+  } finally {
+    window.clearTimeout(signatureTimer)
+  }
 
   const signatureResult = await signatureResponse.json()
 
@@ -66,10 +83,24 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
   formData.append('signature', signatureResult.data.signature)
   formData.append('folder', signatureResult.data.folder)
 
-  const uploadResponse = await fetch(
-    `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`,
-    { method: 'POST', body: formData }
-  )
+  onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}...`)
+  const uploadController = new AbortController()
+  const uploadTimer = window.setTimeout(() => uploadController.abort(), uploadTimeoutMs)
+
+  let uploadResponse
+  try {
+    uploadResponse = await fetch(
+      `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`,
+      { method: 'POST', body: formData, signal: uploadController.signal }
+    )
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('The media upload timed out. Check the file size and your connection, then try again.', { cause: error })
+    }
+    throw error
+  } finally {
+    window.clearTimeout(uploadTimer)
+  }
   const uploadResult = await uploadResponse.json()
 
   if (!uploadResponse.ok) {

@@ -270,11 +270,15 @@ function AdminDashboard({ user, onSignOut }) {
       }
 
       const artwork = mixtapeArtworkFile
-        ? await uploadToCloudinary(mixtapeArtworkFile, 'mixtapes', 'image', accessToken)
+        ? await uploadToCloudinary(mixtapeArtworkFile, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status))
         : mixtapeForm.artwork
+      if (mixtapeAudioFile) {
+        setMixtapeStatus('Artwork uploaded. Preparing audio upload...')
+      }
       const audioUrl = mixtapeAudioFile
-        ? await uploadToCloudinary(mixtapeAudioFile, 'mixtapes', 'video', accessToken)
+        ? await uploadToCloudinary(mixtapeAudioFile, 'mixtapes', 'video', accessToken, (status) => setMixtapeStatus(status))
         : mixtapeForm.audio_url || null
+      setMixtapeStatus('Saving mixtape record...')
       const { data, error: saveError } = await getSupabaseClient()
         .from('mixtapes')
         .upsert({ ...mixtapeForm, artwork, audio_url: audioUrl })
