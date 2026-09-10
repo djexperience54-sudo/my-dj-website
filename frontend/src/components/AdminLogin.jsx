@@ -71,20 +71,21 @@ function AdminLogin() {
     setIsSubmitting(true)
 
     try {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      const client = getSupabaseClient()
+      const { data: signInData, error: signInError } = await client.auth.signInWithPassword({ email, password })
 
       if (signInError) {
         throw signInError
       }
 
-      const { data: assuranceData, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      const { data: assuranceData, error: assuranceError } = await client.auth.mfa.getAuthenticatorAssuranceLevel()
 
       if (assuranceError) {
         throw assuranceError
       }
 
       if (assuranceData.nextLevel === 'aal2' && assuranceData.currentLevel !== 'aal2') {
-        const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors()
+        const { data: factorsData, error: factorsError } = await client.auth.mfa.listFactors()
 
         if (factorsError) {
           throw factorsError
@@ -92,11 +93,11 @@ function AdminLogin() {
 
         const factor = factorsData.totp.find((item) => item.status === 'verified')
         if (!factor) {
-          await supabase.auth.signOut()
+          await client.auth.signOut()
           throw new Error('Multi-factor authentication is required, but no authenticator app is enrolled for this account.')
         }
 
-        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: factor.id })
+        const { data: challengeData, error: challengeError } = await client.auth.mfa.challenge({ factorId: factor.id })
         if (challengeError) {
           throw challengeError
         }
@@ -124,7 +125,8 @@ function AdminLogin() {
     setIsSubmitting(true)
 
     try {
-      const { data, error: verifyError } = await supabase.auth.mfa.verify({
+      const client = getSupabaseClient()
+      const { data, error: verifyError } = await client.auth.mfa.verify({
         factorId: mfaFactorId,
         challengeId: mfaChallengeId,
         code: mfaCode.trim()
@@ -138,7 +140,7 @@ function AdminLogin() {
         throw new Error('The authenticator code could not be verified.')
       }
 
-      const { data: userData, error: userError } = await supabase.auth.getUser()
+      const { data: userData, error: userError } = await client.auth.getUser()
       if (userError) {
         throw userError
       }
