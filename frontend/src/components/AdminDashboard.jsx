@@ -33,6 +33,15 @@ const emptyGalleryItem = {
   sort_order: 0
 }
 
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'mixtape'
+}
+
 const emptySiteSettings = {
   id: 'default',
   hero_title: "INT'L DJ EXPERIENCE",
@@ -69,6 +78,7 @@ function AdminDashboard({ user, onSignOut }) {
   const [mixtapeUploadProgress, setMixtapeUploadProgress] = useState(null)
   const [mixtapeArtworkFile, setMixtapeArtworkFile] = useState(null)
   const [mixtapeAudioFile, setMixtapeAudioFile] = useState(null)
+  const [embeddedArtworkFile, setEmbeddedArtworkFile] = useState(null)
   const [events, setEvents] = useState([])
   const [eventForm, setEventForm] = useState(emptyEvent)
   const [isSavingEvent, setIsSavingEvent] = useState(false)
@@ -255,6 +265,33 @@ function AdminDashboard({ user, onSignOut }) {
     setMixtapeArtworkFile(null)
     setMixtapeAudioFile(null)
     setMixtapeUploadProgress(null)
+    setEmbeddedArtworkFile(null)
+  }
+
+  async function handleMixtapeAudioChange(event) {
+    const audioFile = event.target.files?.[0] ?? null
+    setMixtapeAudioFile(audioFile)
+    setEmbeddedArtworkFile(null)
+
+    if (!audioFile) {
+      return
+    }
+
+    const detectedTitle = audioFile.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim()
+    setMixtapeForm((currentForm) => ({
+      ...currentForm,
+      id: currentForm.id || slugify(audioFile.name),
+      title: currentForm.title || detectedTitle
+    }))
+
+    setMixtapeStatus('Checking audio metadata and embedded artwork...')
+    try {
+      const artwork = await extractEmbeddedArtwork(audioFile)
+      setEmbeddedArtworkFile(artwork)
+      setMixtapeStatus(artwork ? 'Audio title, ID, and embedded artwork detected.' : 'Audio title and ID detected. No embedded artwork found.')
+    } catch (metadataError) {
+      setMixtapeStatus(`Audio title and ID detected. Artwork could not be read: ${metadataError.message}`)
+    }
   }
 
   async function handleMixtapeSubmit(event) {
@@ -272,8 +309,8 @@ function AdminDashboard({ user, onSignOut }) {
         throw new Error('Your admin session has expired. Please sign in again.')
       }
 
-      let embeddedArtwork = null
-      if (!mixtapeArtworkFile && !mixtapeForm.artwork && mixtapeAudioFile) {
+      let embeddedArtwork = embeddedArtworkFile
+      if (!mixtapeArtworkFile && !mixtapeForm.artwork && mixtapeAudioFile && !embeddedArtwork) {
         setMixtapeStatus('Checking audio for embedded artwork...')
         embeddedArtwork = await extractEmbeddedArtwork(mixtapeAudioFile)
         if (!embeddedArtwork) {
@@ -313,6 +350,7 @@ function AdminDashboard({ user, onSignOut }) {
       setMixtapeForm(emptyMixtape)
       setMixtapeArtworkFile(null)
       setMixtapeAudioFile(null)
+      setEmbeddedArtworkFile(null)
       setMixtapeUploadProgress(null)
       setMixtapeStatus('Mixtape saved successfully.')
     } catch (saveError) {
@@ -709,7 +747,7 @@ function AdminDashboard({ user, onSignOut }) {
           </label>
           <label>
             upload audio
-            <input type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4,.mpeg" onChange={(event) => setMixtapeAudioFile(event.target.files?.[0] ?? null)} />
+            <input type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4,.mpeg" onChange={handleMixtapeAudioChange} />
             {mixtapeAudioFile && <small className="selected-file">Selected: {mixtapeAudioFile.name} ({formatFileSize(mixtapeAudioFile.size)})</small>}
           </label>
           {Object.entries(emptyMixtape).map(([field]) => (
