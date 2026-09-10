@@ -86,11 +86,15 @@ function AdminDashboard({ user, onSignOut }) {
   const [galleryItems, setGalleryItems] = useState([])
   const [galleryForm, setGalleryForm] = useState(emptyGalleryItem)
   const [isSavingGallery, setIsSavingGallery] = useState(false)
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState(null)
+  const [galleryStatus, setGalleryStatus] = useState('')
   const [galleryFile, setGalleryFile] = useState(null)
   const [heroImageFile, setHeroImageFile] = useState(null)
   const [aboutImageFile, setAboutImageFile] = useState(null)
   const [siteSettingsForm, setSiteSettingsForm] = useState(emptySiteSettings)
   const [isSavingSiteSettings, setIsSavingSiteSettings] = useState(false)
+  const [siteUploadProgress, setSiteUploadProgress] = useState(null)
+  const [siteUploadStatus, setSiteUploadStatus] = useState('')
   const [videos, setVideos] = useState([])
   const [videoForm, setVideoForm] = useState({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
   const [isSavingVideo, setIsSavingVideo] = useState(false)
@@ -487,6 +491,8 @@ function AdminDashboard({ user, onSignOut }) {
     event.preventDefault()
     setError('')
     setIsSavingGallery(true)
+    setGalleryUploadProgress(null)
+    setGalleryStatus('Preparing gallery upload...')
 
     try {
       const { data: sessionData } = await getSupabaseClient().auth.getSession()
@@ -497,7 +503,7 @@ function AdminDashboard({ user, onSignOut }) {
       }
 
       const src = galleryFile
-        ? await uploadToCloudinary(galleryFile, 'gallery', 'image', accessToken)
+        ? await uploadToCloudinary(galleryFile, 'gallery', 'image', accessToken, setGalleryStatus, setGalleryUploadProgress)
         : galleryForm.src
       const { data, error: saveError } = await getSupabaseClient()
         .from('gallery_items')
@@ -517,10 +523,13 @@ function AdminDashboard({ user, onSignOut }) {
       })
       setGalleryForm(emptyGalleryItem)
       setGalleryFile(null)
+      setGalleryStatus('Gallery item saved successfully.')
     } catch (saveError) {
       setError(saveError.message)
+      setGalleryStatus(`Save failed: ${saveError.message}`)
     } finally {
       setIsSavingGallery(false)
+      setGalleryUploadProgress(null)
     }
   }
 
@@ -551,6 +560,8 @@ function AdminDashboard({ user, onSignOut }) {
     event.preventDefault()
     setError('')
     setIsSavingSiteSettings(true)
+    setSiteUploadProgress(null)
+    setSiteUploadStatus('Preparing homepage image uploads...')
 
     try {
       const { data: sessionData } = await getSupabaseClient().auth.getSession()
@@ -561,10 +572,10 @@ function AdminDashboard({ user, onSignOut }) {
       }
 
       const heroImage = heroImageFile
-        ? await uploadToCloudinary(heroImageFile, 'site', 'image', accessToken)
+        ? await uploadToCloudinary(heroImageFile, 'site', 'image', accessToken, setSiteUploadStatus, setSiteUploadProgress)
         : siteSettingsForm.hero_image.trim() || '/Hero-view.jpg'
       const aboutImage = aboutImageFile
-        ? await uploadToCloudinary(aboutImageFile, 'site', 'image', accessToken)
+        ? await uploadToCloudinary(aboutImageFile, 'site', 'image', accessToken, setSiteUploadStatus, setSiteUploadProgress)
         : siteSettingsForm.about_image.trim() || 'https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=1000&q=85'
 
       const payload = {
@@ -600,11 +611,14 @@ function AdminDashboard({ user, onSignOut }) {
 
       setHeroImageFile(null)
       setAboutImageFile(null)
+      setSiteUploadStatus('Homepage content saved successfully.')
       setSiteSettingsForm({ ...emptySiteSettings, ...data, about_paragraphs: Array.isArray(data.about_paragraphs) ? data.about_paragraphs : String(data.about_paragraphs || '').split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean) })
     } catch (saveError) {
       setError(saveError.message)
+      setSiteUploadStatus(`Save failed: ${saveError.message}`)
     } finally {
       setIsSavingSiteSettings(false)
+      setSiteUploadProgress(null)
     }
   }
 
@@ -855,6 +869,15 @@ function AdminDashboard({ user, onSignOut }) {
           <button type="submit" disabled={isSavingSiteSettings}>
             {isSavingSiteSettings ? 'Saving...' : 'Save homepage content'}
           </button>
+          {isSavingSiteSettings && (
+            <div className="admin-upload-progress" role="status" aria-live="polite">
+              <div className="admin-upload-progress-track">
+                <div className="admin-upload-progress-bar" style={{ width: `${siteUploadProgress ?? 0}%` }} />
+              </div>
+              <span>{siteUploadProgress === null ? siteUploadStatus : `${siteUploadStatus} ${siteUploadProgress}% uploaded`}</span>
+            </div>
+          )}
+          {siteUploadStatus && !isSavingSiteSettings && <p className="admin-form-status" role="status">{siteUploadStatus}</p>}
         </form>
       </section>
       <section className="admin-next-section" aria-labelledby="comments-title-admin">
@@ -935,6 +958,15 @@ function AdminDashboard({ user, onSignOut }) {
           <button type="submit" disabled={isSavingGallery}>
             {isSavingGallery ? 'Saving...' : 'Save gallery item'}
           </button>
+          {isSavingGallery && (
+            <div className="admin-upload-progress" role="status" aria-live="polite">
+              <div className="admin-upload-progress-track">
+                <div className="admin-upload-progress-bar" style={{ width: `${galleryUploadProgress ?? 0}%` }} />
+              </div>
+              <span>{galleryUploadProgress === null ? galleryStatus : `${galleryStatus} ${galleryUploadProgress}% uploaded`}</span>
+            </div>
+          )}
+          {galleryStatus && !isSavingGallery && <p className="admin-form-status" role="status">{galleryStatus}</p>}
           {galleryForm.id && <button className="admin-cancel-button" type="button" onClick={cancelGalleryEdit}>Cancel edit</button>}
         </form>
         <div className="admin-content-list">

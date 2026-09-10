@@ -1,15 +1,17 @@
 function GenreNavigation({ genres, mixtapes = [] }) {
-  const genreCounts = Object.fromEntries(
-    (genres || []).map((genre) => [genre.name, 0])
-  )
+  const genreNames = [...new Set([
+    ...(genres || []).map((genre) => genre.name),
+    ...mixtapes.map((mixtape) => mixtape.genre).filter(Boolean)
+  ])]
+  const genreCounts = Object.fromEntries(genreNames.map((genreName) => [genreName, 0]))
 
   for (const mixtape of mixtapes) {
-    if (mixtape.genre && genreCounts[mixtape.genre] !== undefined) {
+    if (mixtape.genre) {
       genreCounts[mixtape.genre] += 1
     }
   }
 
-  const visibleGenres = (genres || []).filter((genre) => (genreCounts[genre.name] || 0) > 0)
+  const visibleGenres = genreNames.filter((genreName) => (genreCounts[genreName] || 0) > 0)
 
   function handleGenreClick(event, genreName) {
     event.preventDefault()
@@ -18,10 +20,10 @@ function GenreNavigation({ genres, mixtapes = [] }) {
 
   return (
     <nav className="genre-navigation" aria-label="Browse mixtapes by genre">
-      {visibleGenres.map((genre) => (
-        <a href={`#mixtape-library`} key={genre.name} onClick={(event) => handleGenreClick(event, genre.name)}>
-          <span>{genre.name}</span>
-          <span>{genreCounts[genre.name] || 0}</span>
+      {visibleGenres.map((genreName) => (
+        <a href="#mixtape-library" key={genreName} onClick={(event) => handleGenreClick(event, genreName)}>
+          <span>{genreName}</span>
+          <span>{genreCounts[genreName] || 0}</span>
         </a>
       ))}
     </nav>
