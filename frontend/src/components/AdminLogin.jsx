@@ -163,7 +163,7 @@ function AdminLogin() {
       setMfaCode('')
       setMfaFactorId('')
       setMfaChallengeId('')
-      setSessionMessage('Admin locked for inactivity. Please sign in again.')
+      setSessionMessage('')
     }} />
   }
 
