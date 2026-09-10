@@ -199,7 +199,7 @@ function AdminDashboard({ user, onSignOut }) {
           .select('id, name, mood, message, created_at')
           .order('created_at', { ascending: false })
 
-        if (commentError && !/does not exist|relation .* does not exist/i.test(commentError.message)) {
+        if (commentError && !/does not exist|relation .* does not exist|schema cache/i.test(commentError.message)) {
           throw commentError
         }
 
