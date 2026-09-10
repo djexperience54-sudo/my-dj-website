@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '../lib/supabaseClient'
-import { uploadToCloudinary } from '../lib/cloudinaryUpload'
+import { extractEmbeddedArtwork, uploadToCloudinary } from '../lib/cloudinaryUpload'
 
 const contentTables = [
   { key: 'mixtapes', label: 'Mixtapes' },
@@ -269,9 +269,20 @@ function AdminDashboard({ user, onSignOut }) {
         throw new Error('Your admin session has expired. Please sign in again.')
       }
 
+      let embeddedArtwork = null
+      if (!mixtapeArtworkFile && !mixtapeForm.artwork && mixtapeAudioFile) {
+        setMixtapeStatus('Checking audio for embedded artwork...')
+        embeddedArtwork = await extractEmbeddedArtwork(mixtapeAudioFile)
+        if (!embeddedArtwork) {
+          throw new Error('No embedded artwork found. Choose an artwork image or add artwork to the audio file.')
+        }
+      }
+
       const artwork = mixtapeArtworkFile
         ? await uploadToCloudinary(mixtapeArtworkFile, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status))
-        : mixtapeForm.artwork
+        : embeddedArtwork
+          ? await uploadToCloudinary(embeddedArtwork, 'mixtapes', 'image', accessToken, (status) => setMixtapeStatus(status))
+          : mixtapeForm.artwork
       if (mixtapeAudioFile) {
         setMixtapeStatus('Artwork uploaded. Preparing audio upload...')
       }

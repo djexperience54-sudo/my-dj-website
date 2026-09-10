@@ -1,7 +1,8 @@
 import { apiUrl } from './api'
+import { parseBlob, selectCover } from 'music-metadata'
+
 const maxFileSize = 400 * 1024 * 1024
 const signatureTimeoutMs = 30000
-const uploadTimeoutMs = 15 * 60 * 1000
 
 const allowedMimeTypes = {
   image: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
@@ -20,6 +21,21 @@ export function getDownloadUrl(mediaUrl, title) {
     .toLowerCase() || 'mixtape'
 
   return mediaUrl.replace('/upload/', `/upload/fl_attachment:${fileName}/`)
+}
+
+export async function extractEmbeddedArtwork(audioFile) {
+  if (!audioFile) {
+    return null
+  }
+
+  const metadata = await parseBlob(audioFile, { duration: false })
+  const cover = selectCover(metadata.common.picture)
+
+  if (!cover) {
+    return null
+  }
+
+  return new File([cover.data], 'embedded-artwork', { type: cover.format })
 }
 
 export async function uploadToCloudinary(file, folder, resourceType, accessToken, onStatus) {
@@ -84,23 +100,10 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
   formData.append('folder', signatureResult.data.folder)
 
   onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}...`)
-  const uploadController = new AbortController()
-  const uploadTimer = window.setTimeout(() => uploadController.abort(), uploadTimeoutMs)
-
-  let uploadResponse
-  try {
-    uploadResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`,
-      { method: 'POST', body: formData, signal: uploadController.signal }
-    )
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('The media upload timed out. Check the file size and your connection, then try again.', { cause: error })
-    }
-    throw error
-  } finally {
-    window.clearTimeout(uploadTimer)
-  }
+  const uploadResponse = await fetch(
+    `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`,
+    { method: 'POST', body: formData }
+  )
   const uploadResult = await uploadResponse.json()
 
   if (!uploadResponse.ok) {
