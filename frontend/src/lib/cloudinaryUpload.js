@@ -23,6 +23,22 @@ export function getDownloadUrl(mediaUrl, title) {
   return mediaUrl.replace('/upload/', `/upload/fl_attachment:${fileName}/`)
 }
 
+function formatMegabytes(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return 'calculating time'
+  }
+
+  if (seconds < 60) {
+    return `${Math.ceil(seconds)}s left`
+  }
+
+  return `${Math.ceil(seconds / 60)}m left`
+}
+
 export async function extractEmbeddedArtwork(audioFile) {
   if (!audioFile) {
     return null
@@ -100,6 +116,7 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
   formData.append('folder', signatureResult.data.folder)
 
   onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}...`)
+  const uploadStartedAt = performance.now()
   const uploadResult = await new Promise((resolve, reject) => {
     const request = new XMLHttpRequest()
     request.open('POST', `https://api.cloudinary.com/v1_1/${signatureResult.data.cloudName}/${resourceType}/upload`)
@@ -108,8 +125,13 @@ export async function uploadToCloudinary(file, folder, resourceType, accessToken
     request.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable) {
         const progress = Math.round((event.loaded / event.total) * 100)
+        const elapsedSeconds = (performance.now() - uploadStartedAt) / 1000
+        const speedBytesPerSecond = elapsedSeconds > 0 ? event.loaded / elapsedSeconds : 0
+        const remainingSeconds = speedBytesPerSecond > 0
+          ? (event.total - event.loaded) / speedBytesPerSecond
+          : Number.NaN
         onProgress?.(progress)
-        onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}... ${progress}%`)
+        onStatus?.(`Uploading ${resourceType === 'image' ? 'artwork' : 'audio'}... ${progress}% - ${formatMegabytes(event.loaded)} at ${(speedBytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s, ${formatDuration(remainingSeconds)}`)
       }
     })
     request.addEventListener('load', () => {
