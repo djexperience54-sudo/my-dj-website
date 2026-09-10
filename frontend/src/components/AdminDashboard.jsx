@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getSupabaseClient } from '../lib/supabaseClient'
 import { extractEmbeddedArtwork, uploadToCloudinary } from '../lib/cloudinaryUpload'
 
@@ -79,6 +79,7 @@ function AdminDashboard({ user, onSignOut }) {
   const [mixtapeArtworkFile, setMixtapeArtworkFile] = useState(null)
   const [mixtapeAudioFile, setMixtapeAudioFile] = useState(null)
   const [embeddedArtworkFile, setEmbeddedArtworkFile] = useState(null)
+  const audioSelectionRef = useRef(0)
   const [events, setEvents] = useState([])
   const [eventForm, setEventForm] = useState(emptyEvent)
   const [isSavingEvent, setIsSavingEvent] = useState(false)
@@ -269,9 +270,19 @@ function AdminDashboard({ user, onSignOut }) {
   }
 
   async function handleMixtapeAudioChange(event) {
+    const selectionId = audioSelectionRef.current + 1
+    audioSelectionRef.current = selectionId
     const audioFile = event.target.files?.[0] ?? null
     setMixtapeAudioFile(audioFile)
     setEmbeddedArtworkFile(null)
+    setMixtapeArtworkFile(null)
+    setMixtapeForm((currentForm) => ({
+      ...currentForm,
+      id: '',
+      title: '',
+      artwork: '',
+      audio_url: ''
+    }))
 
     if (!audioFile) {
       return
@@ -280,16 +291,22 @@ function AdminDashboard({ user, onSignOut }) {
     const detectedTitle = audioFile.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim()
     setMixtapeForm((currentForm) => ({
       ...currentForm,
-      id: currentForm.id || slugify(audioFile.name),
-      title: currentForm.title || detectedTitle
+      id: slugify(audioFile.name),
+      title: detectedTitle
     }))
 
     setMixtapeStatus('Checking audio metadata and embedded artwork...')
     try {
       const artwork = await extractEmbeddedArtwork(audioFile)
+      if (selectionId !== audioSelectionRef.current) {
+        return
+      }
       setEmbeddedArtworkFile(artwork)
       setMixtapeStatus(artwork ? 'Audio title, ID, and embedded artwork detected.' : 'Audio title and ID detected. No embedded artwork found.')
     } catch (metadataError) {
+      if (selectionId !== audioSelectionRef.current) {
+        return
+      }
       setMixtapeStatus(`Audio title and ID detected. Artwork could not be read: ${metadataError.message}`)
     }
   }
