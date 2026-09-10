@@ -4,18 +4,29 @@ import AdminDashboard from './AdminDashboard'
 import './AdminLogin.css'
 
 function AdminLogin() {
+  let supabase
+  let configurationError = ''
+
+  try {
+    supabase = getSupabaseClient()
+  } catch (error) {
+    configurationError = error.message
+  }
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [verifyPassword, setVerifyPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(configurationError)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [user, setUser] = useState(null)
-  const [isCheckingSession, setIsCheckingSession] = useState(true)
+  const [isCheckingSession, setIsCheckingSession] = useState(Boolean(supabase))
   const [sessionMessage, setSessionMessage] = useState('')
   const [verificationStep, setVerificationStep] = useState(false)
 
   useEffect(() => {
-    const supabase = getSupabaseClient()
+    if (!supabase) {
+      return undefined
+    }
 
     async function checkSession() {
       const { data } = await supabase.auth.getSession()
@@ -50,7 +61,7 @@ function AdminLogin() {
     })
 
     return () => authListener.subscription.unsubscribe()
-  }, [])
+  }, [supabase])
 
   async function handleSubmit(event) {
     event.preventDefault()
