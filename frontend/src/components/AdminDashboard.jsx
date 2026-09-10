@@ -5,7 +5,11 @@ import { extractEmbeddedArtwork, uploadToCloudinary } from '../lib/cloudinaryUpl
 const contentTables = [
   { key: 'mixtapes', label: 'Mixtapes' },
   { key: 'events', label: 'Events' },
-  { key: 'gallery_items', label: 'Gallery items' }
+  { key: 'gallery_items', label: 'Gallery items' },
+  { key: 'site_videos', label: 'Featured videos', optional: true },
+  { key: 'site_settings', label: 'Homepage settings', optional: true },
+  { key: 'comments', label: 'Comments', optional: true },
+  { key: 'bookings', label: 'Bookings', optional: true }
 ]
 
 const emptyMixtape = {
@@ -136,12 +140,15 @@ function AdminDashboard({ user, onSignOut }) {
     async function loadOverview() {
       try {
         const results = await Promise.all(
-          contentTables.map(async ({ key }) => {
+          contentTables.map(async ({ key, optional }) => {
             const { count, error: countError } = await getSupabaseClient()
               .from(key)
               .select('*', { count: 'exact', head: true })
 
             if (countError) {
+              if (optional && /does not exist|relation .* does not exist|schema cache/i.test(countError.message)) {
+                return [key, 0]
+              }
               throw countError
             }
 
