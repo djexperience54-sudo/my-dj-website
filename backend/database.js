@@ -43,6 +43,32 @@ function getGalleryItems() {
   return getRows('gallery_items', 'id, src, alt', 'sort_order')
 }
 
+async function getPublicSiteContent() {
+  const [mixtapes, events, gallery, settingsResult, videos] = await Promise.all([
+    getMixtapes(),
+    getEvents(),
+    getGalleryItems(),
+    supabase.from('site_settings').select('*').limit(1).maybeSingle(),
+    supabase.from('site_videos').select('id, title, url, type, sort_order').order('sort_order', { ascending: true }).limit(1)
+  ])
+
+  if (settingsResult.error) {
+    throw settingsResult.error
+  }
+
+  if (videos.error) {
+    throw videos.error
+  }
+
+  return {
+    mixtapes,
+    events,
+    gallery,
+    siteSettings: settingsResult.data,
+    featuredVideo: videos.data?.[0] || null
+  }
+}
+
 function formatSupabaseError(error, context) {
   const message = error && error.message ? error.message : 'A database error occurred.'
 
@@ -77,4 +103,4 @@ async function createComment(comment) {
   return data
 }
 
-module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes }
+module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent }

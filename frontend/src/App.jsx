@@ -11,7 +11,6 @@ import MusicPlayer from './components/MusicPlayer'
 import SiteFooter from './components/SiteFooter'
 import { getDownloadUrl } from './lib/cloudinaryUpload'
 import { apiUrl } from './lib/api'
-import { getSupabaseClient } from './lib/supabaseClient'
 import { upcomingEvents } from './data/events'
 import { genres } from './data/genres'
 import { featuredMixtapes } from './data/mixtapes'
@@ -329,50 +328,30 @@ function App() {
   useEffect(() => {
     async function loadContent() {
       try {
-        const [mixtapeResponse, eventResponse, galleryResponse] = await Promise.all([
-          fetch(apiUrl('/api/mixtapes')),
-          fetch(apiUrl('/api/events')),
-          fetch(apiUrl('/api/gallery'))
-        ])
+        const contentResponse = await fetch(apiUrl('/api/site-content'))
 
-        if (!mixtapeResponse.ok || !eventResponse.ok || !galleryResponse.ok) {
+        if (!contentResponse.ok) {
           throw new Error('Some website content could not be loaded.')
         }
 
-        const [mixtapeResult, eventResult, galleryResult] = await Promise.all([
-          mixtapeResponse.json(),
-          eventResponse.json(),
-          galleryResponse.json()
-        ])
+        const { data: content } = await contentResponse.json()
 
-        setMixtapes(mixtapeResult.data)
-        setEvents(eventResult.data)
-        setGallery(galleryResult.data)
+        setMixtapes(content.mixtapes)
+        setEvents(content.events)
+        setGallery(content.gallery)
 
-        const { data: settingsRow, error: settingsError } = await getSupabaseClient()
-          .from('site_settings')
-          .select('*')
-          .limit(1)
-          .maybeSingle()
-
-        if (!settingsError && settingsRow) {
+        if (content.siteSettings) {
           setSiteSettings({
             ...defaultSiteSettings,
-            ...settingsRow,
-            about_paragraphs: Array.isArray(settingsRow.about_paragraphs)
-              ? settingsRow.about_paragraphs
-              : (settingsRow.about_paragraphs ? String(settingsRow.about_paragraphs).split(/\n+/) : defaultSiteSettings.about_paragraphs)
+            ...content.siteSettings,
+            about_paragraphs: Array.isArray(content.siteSettings.about_paragraphs)
+              ? content.siteSettings.about_paragraphs
+              : (content.siteSettings.about_paragraphs ? String(content.siteSettings.about_paragraphs).split(/\n+/) : defaultSiteSettings.about_paragraphs)
           })
         }
 
-        const { data: videoRows, error: videoError } = await getSupabaseClient()
-          .from('site_videos')
-          .select('id, title, url, type, sort_order')
-          .order('sort_order', { ascending: true })
-          .limit(1)
-
-        if (!videoError && videoRows && videoRows.length > 0) {
-          setFeaturedVideo(videoRows[0])
+        if (content.featuredVideo) {
+          setFeaturedVideo(content.featuredVideo)
         }
       } catch (error) {
         setContentError(error.message)

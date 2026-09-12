@@ -3,7 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes } = require('./database')
+const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
 const { sendBookingEmail } = require('./email')
 const { sanitizeBookingPayload, sanitizeCommentPayload } = require('./validation')
@@ -63,6 +63,10 @@ app.get('/api/events', asyncRoute(async (request, response) => {
 
 app.get('/api/gallery', asyncRoute(async (request, response) => {
   response.json({ data: await getGalleryItems() })
+}))
+
+app.get('/api/site-content', asyncRoute(async (request, response) => {
+  response.json({ data: await getPublicSiteContent() })
 }))
 
 app.post('/api/bookings', asyncRoute(async (request, response) => {
