@@ -43,6 +43,18 @@ function getGalleryItems() {
   return getRows('gallery_items', 'id, src, alt', 'sort_order')
 }
 
+async function getSitemapContent() {
+  const [mixtapes] = await Promise.all([
+    supabase.from('mixtapes').select('id, created_at').order('created_at', { ascending: false }),
+  ])
+
+  if (mixtapes.error) {
+    throw mixtapes.error
+  }
+
+  return { mixtapes: mixtapes.data }
+}
+
 async function getPublicSiteContent() {
   const [mixtapes, events, gallery, settingsResult, videos] = await Promise.all([
     getMixtapes(),
@@ -103,4 +115,4 @@ async function createComment(comment) {
   return data
 }
 
-module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent }
+module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent }

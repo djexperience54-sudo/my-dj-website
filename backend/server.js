@@ -3,7 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent } = require('./database')
+const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
 const { sendBookingEmail } = require('./email')
 const { sanitizeBookingPayload, sanitizeCommentPayload } = require('./validation')
@@ -37,6 +37,15 @@ function asyncRoute(handler) {
   return (request, response, next) => Promise.resolve(handler(request, response, next)).catch(next)
 }
 
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -67,6 +76,21 @@ app.get('/api/gallery', asyncRoute(async (request, response) => {
 
 app.get('/api/site-content', asyncRoute(async (request, response) => {
   response.json({ data: await getPublicSiteContent() })
+}))
+
+app.get('/sitemap.xml', asyncRoute(async (request, response) => {
+  const { mixtapes } = await getSitemapContent()
+  const urls = [
+    'https://intldjexperience.com/',
+    ...mixtapes.map((item) => `https://intldjexperience.com/mixes/${encodeURIComponent(item.id)}`),
+  ]
+  const lastModified = mixtapes
+    .map((item) => item.created_at)
+    .filter(Boolean)
+    .sort()
+    .pop()
+  const entries = urls.map((url) => `  <url><loc>${escapeXml(url)}</loc>${lastModified ? `<lastmod>${new Date(lastModified).toISOString()}</lastmod>` : ''}</url>`).join('\n')
+  response.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`)
 }))
 
 app.post('/api/bookings', asyncRoute(async (request, response) => {
