@@ -329,12 +329,35 @@ function App() {
     async function loadContent() {
       try {
         const contentResponse = await fetch(apiUrl('/api/site-content'))
+        let content
 
-        if (!contentResponse.ok) {
-          throw new Error('Some website content could not be loaded.')
+        if (contentResponse.ok) {
+          ({ data: content } = await contentResponse.json())
+        } else {
+          const [mixtapeResponse, eventResponse, galleryResponse] = await Promise.all([
+            fetch(apiUrl('/api/mixtapes')),
+            fetch(apiUrl('/api/events')),
+            fetch(apiUrl('/api/gallery'))
+          ])
+
+          if (!mixtapeResponse.ok || !eventResponse.ok || !galleryResponse.ok) {
+            throw new Error('Some website content could not be loaded.')
+          }
+
+          const [mixtapeResult, eventResult, galleryResult] = await Promise.all([
+            mixtapeResponse.json(),
+            eventResponse.json(),
+            galleryResponse.json()
+          ])
+
+          content = {
+            mixtapes: mixtapeResult.data,
+            events: eventResult.data,
+            gallery: galleryResult.data,
+            siteSettings: null,
+            featuredVideo: null
+          }
         }
-
-        const { data: content } = await contentResponse.json()
 
         setMixtapes(content.mixtapes)
         setEvents(content.events)
