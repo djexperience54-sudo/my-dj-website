@@ -31,15 +31,9 @@ function sanitizeBookingPayload(payload = {}) {
 
 function sanitizeCommentPayload(payload = {}) {
   const name = normalizeText(payload.name || 'Guest', 'Name', 120)
-  const email = normalizeText(payload.email, 'Email', 254).toLowerCase()
   const mood = ['good', 'bad', 'neutral'].includes(payload.mood) ? payload.mood : 'neutral'
   const message = normalizeText(payload.message, 'Message', 1000)
-
-  if (!isValidEmail(email)) {
-    throw new Error('Enter a valid email address.')
-  }
-
-  return { name, email, mood, message }
+  return { name, mood, message }
 }
 
 module.exports = { sanitizeBookingPayload, sanitizeCommentPayload }

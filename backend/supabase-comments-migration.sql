@@ -13,6 +13,16 @@ create table if not exists public.comments (
 alter table public.comments add column if not exists email text;
 update public.comments set email = 'unknown@example.com' where email is null;
 alter table public.comments alter column email set not null;
+alter table public.comments add column if not exists likes integer not null default 0;
+
+create table if not exists public.comment_likes (
+  comment_id bigint not null references public.comments(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (comment_id, user_id)
+);
+
+alter table public.comment_likes enable row level security;
 
 create table if not exists public.email_verifications (
   token uuid primary key,

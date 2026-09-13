@@ -3,7 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, createComment, createEmailVerification, deleteEmailVerification, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent } = require('./database')
+const { createBooking, createComment, createEmailVerification, deleteEmailVerification, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent, toggleCommentLike } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
 const { sendBookingEmail, sendCommentEmail, sendVerificationCode } = require('./email')
 const crypto = require('crypto')
@@ -53,6 +53,14 @@ function isValidEmail(email) {
 
 function hashVerificationCode(code) {
   return crypto.createHash('sha256').update(code).digest('hex')
+}
+
+function publicSubmissionError(error, fallback) {
+  const message = error?.message || ''
+  if (/required|valid email|too long|verify your email|sign in with google/i.test(message)) {
+    return message
+  }
+  return fallback
 }
 
 app.post('/api/email-verification/request', asyncRoute(async (request, response) => {
@@ -172,19 +180,22 @@ app.post('/api/bookings', asyncRoute(async (request, response) => {
       data: booking
     })
   } catch (error) {
-    response.status(400).json({ error: error.message })
+    response.status(400).json({ error: publicSubmissionError(error, 'Your booking could not be submitted. Please try again.') })
   }
 }))
 
 app.post('/api/comments', asyncRoute(async (request, response) => {
   try {
-    const payload = sanitizeCommentPayload(request.body)
-    const verification = await getEmailVerification(request.body.verificationToken, payload.email, 'comment')
-    if (!verification) {
-      return response.status(400).json({ error: 'Verify your email before posting a comment.' })
+    const authorization = request.headers.authorization || ''
+    const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : ''
+    if (!accessToken) {
+      return response.status(401).json({ error: 'Sign in with Google before posting a comment.' })
     }
-    const comment = await createComment(payload)
-    await deleteEmailVerification(verification.token)
+    const user = await getAuthenticatedUser(accessToken)
+    const metadata = user.user_metadata || {}
+    const displayName = metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Google user'
+    const payload = sanitizeCommentPayload({ ...request.body, name: displayName })
+    const comment = await createComment({ ...payload, email: user.email })
 
     sendCommentEmail({
         to: process.env.SMTP_TO || 'djexperience54@gmail.com',
@@ -201,9 +212,19 @@ app.post('/api/comments', asyncRoute(async (request, response) => {
     })
   } catch (error) {
     response.status(400).json({
-      error: error.message || 'Your comment could not be posted right now. Please try again in a moment.'
+      error: publicSubmissionError(error, 'Your comment could not be posted right now. Please try again in a moment.')
     })
   }
+}))
+
+app.post('/api/comments/:id/like', asyncRoute(async (request, response) => {
+  const authorization = request.headers.authorization || ''
+  const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : ''
+  if (!accessToken) return response.status(401).json({ error: 'Sign in with Google to like comments.' })
+  const user = await getAuthenticatedUser(accessToken)
+  const commentId = Number(request.params.id)
+  if (!Number.isInteger(commentId)) return response.status(400).json({ error: 'That comment is not available.' })
+  response.json({ data: await toggleCommentLike(commentId, user.id) })
 }))
 
 app.post('/api/media/signature', asyncRoute(async (request, response) => {
@@ -231,7 +252,7 @@ app.post('/api/media/signature', asyncRoute(async (request, response) => {
 
 app.use((error, request, response, next) => {
   console.error(error)
-  response.status(500).json({ error: 'The server could not complete that request.' })
+  response.status(500).json({ error: 'We could not complete that request. Please try again.' })
 })
 
 app.listen(port, () => {

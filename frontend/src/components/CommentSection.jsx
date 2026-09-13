@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../lib/api'
-import EmailVerificationFields from './EmailVerificationFields'
+import { getSupabaseClient } from '../lib/supabaseClient'
 
 const initialForm = {
   name: '',
-  email: '',
   mood: 'good',
   message: ''
 }
@@ -14,6 +13,7 @@ const requestTimeoutMs = 20000
 function CommentSection() {
   const [form, setForm] = useState(initialForm)
   const [comments, setComments] = useState([])
+  const [user, setUser] = useState(null)
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -24,16 +24,27 @@ function CommentSection() {
       .then((result) => setComments(result.data || []))
       .catch(() => {})
   }, [])
-  const [verificationToken, setVerificationToken] = useState('')
-  const [isEmailVerified, setIsEmailVerified] = useState(false)
+  useEffect(() => {
+    const supabase = getSupabaseClient()
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((currentForm) => ({ ...currentForm, [name]: value }))
     setSubmitted(false)
     setError('')
-    setVerificationToken('')
-    setIsEmailVerified(false)
+  }
+
+  async function signInWithGoogle() {
+    setError('')
+    const { error: signInError } = await getSupabaseClient().auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    })
+    if (signInError) setError('Google sign-in is not available right now. Please try again.')
   }
 
   async function handleSubmit(event) {
@@ -43,10 +54,17 @@ function CommentSection() {
       return
     }
 
+    if (!user) {
+      setError('Sign in with Google before posting a comment.')
+      return
+    }
+
     setIsSubmitting(true)
     setError('')
-    if (!isEmailVerified || !verificationToken) {
-      setError('Verify your email before posting a comment.')
+    const { data: sessionData } = await getSupabaseClient().auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (!accessToken) {
+      setError('Your Google session expired. Please sign in again.')
       setIsSubmitting(false)
       return
     }
@@ -56,8 +74,8 @@ function CommentSection() {
     try {
       const response = await fetch(apiUrl('/api/comments'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, verificationToken }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(form),
         signal: controller.signal
       })
 
@@ -70,14 +88,31 @@ function CommentSection() {
       setSubmitted(true)
       setComments((currentComments) => [result.data, ...currentComments])
       setForm(initialForm)
-      setVerificationToken('')
-      setIsEmailVerified(false)
     } catch (submissionError) {
       setError(submissionError.name === 'AbortError' ? 'The server took too long to respond. Please try again.' : submissionError.message)
     } finally {
       window.clearTimeout(timeoutId)
       setIsSubmitting(false)
     }
+  }
+
+  async function handleLike(commentId) {
+    if (!user) {
+      setError('Sign in with Google to like comments.')
+      return
+    }
+    const { data: sessionData } = await getSupabaseClient().auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    const response = await fetch(apiUrl(`/api/comments/${commentId}/like`), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      setError(result.error || 'That like could not be saved.')
+      return
+    }
+    setComments((currentComments) => currentComments.map((comment) => comment.id === commentId ? { ...comment, likes: result.data.likes } : comment))
   }
 
   return (
@@ -89,17 +124,11 @@ function CommentSection() {
         </div>
 
         <form className="comment-form" onSubmit={handleSubmit}>
-          <label>
-            Name
-            <input name="name" value={form.name} onChange={handleChange} placeholder="Your name" required />
-          </label>
-
-          <EmailVerificationFields email={form.email} purpose="comment" token={verificationToken} onTokenChange={setVerificationToken} onVerified={setIsEmailVerified} />
-
-          <label>
-            Email
-            <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@example.com" required />
-          </label>
+          {!user ? (
+            <button type="button" onClick={signInWithGoogle}>Sign in with Google to comment</button>
+          ) : (
+            <p className="comment-signed-in">Commenting as {user.user_metadata?.full_name || user.user_metadata?.name || user.email}</p>
+          )}
 
           <label>
             How did it feel?
@@ -115,7 +144,7 @@ function CommentSection() {
             <textarea name="message" value={form.message} onChange={handleChange} rows="4" placeholder="Tell us about the mixtape, the vibe, or the night..." required />
           </label>
 
-          <button type="submit" disabled={isSubmitting}>
+          <button type="submit" disabled={isSubmitting || !user}>
             {isSubmitting ? 'Posting...' : 'Send comment'}
           </button>
 
@@ -134,6 +163,7 @@ function CommentSection() {
               <strong>{comment.name}</strong>
               <span>{comment.mood}</span>
               <p>{comment.message}</p>
+              <button type="button" className="comment-like-button" onClick={() => handleLike(comment.id)}>Like ({comment.likes || 0})</button>
             </article>
           ))}
         </div>

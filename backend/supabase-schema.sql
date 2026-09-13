@@ -67,7 +67,15 @@ create table if not exists public.comments (
   email text not null,
   mood text not null default 'neutral' check (mood in ('good', 'bad', 'neutral')),
   message text not null,
+  likes integer not null default 0,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.comment_likes (
+  comment_id bigint not null references public.comments(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (comment_id, user_id)
 );
 
 create table if not exists public.email_verifications (

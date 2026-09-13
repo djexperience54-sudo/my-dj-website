@@ -30,7 +30,6 @@ test('sanitizeBookingPayload rejects invalid email addresses', () => {
 test('sanitizeCommentPayload accepts valid comment data', () => {
   const result = sanitizeCommentPayload({
     name: 'DJ fan',
-    email: 'fan@example.com',
     mood: 'good',
     message: 'The mix had great energy and the transitions were smooth.'
   })
@@ -44,7 +43,6 @@ test('sanitizeCommentPayload rejects empty messages', () => {
   assert.throws(() => {
     sanitizeCommentPayload({
       name: 'Fan',
-      email: 'fan@example.com',
       mood: 'good',
       message: ''
     })

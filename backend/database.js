@@ -46,12 +46,36 @@ function getGalleryItems() {
 async function getPublicComments() {
   const { data, error } = await supabase
     .from('comments')
-    .select('id, name, mood, message, created_at')
+    .select('id, name, mood, message, likes, created_at')
     .order('created_at', { ascending: false })
     .limit(50)
 
   if (error) throw new Error(formatSupabaseError(error, 'Public comments'))
   return data
+}
+
+async function toggleCommentLike(commentId, userId) {
+  const { data: existing, error: lookupError } = await supabase
+    .from('comment_likes')
+    .select('comment_id')
+    .eq('comment_id', commentId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (lookupError) throw lookupError
+
+  if (existing) {
+    const { error } = await supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', userId)
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('comment_likes').insert({ comment_id: commentId, user_id: userId })
+    if (error) throw error
+  }
+
+  const { count, error: countError } = await supabase.from('comment_likes').select('*', { count: 'exact', head: true }).eq('comment_id', commentId)
+  if (countError) throw countError
+  const { error: updateError } = await supabase.from('comments').update({ likes: count ?? 0 }).eq('id', commentId)
+  if (updateError) throw updateError
+  return { liked: !existing, likes: count ?? 0 }
 }
 
 async function getSitemapContent() {
@@ -164,4 +188,4 @@ async function deleteEmailVerification(token) {
   if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
 }
 
-module.exports = { createBooking, createComment, createEmailVerification, deleteEmailVerification, formatSupabaseError, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent }
+module.exports = { createBooking, createComment, createEmailVerification, deleteEmailVerification, formatSupabaseError, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent, toggleCommentLike }
