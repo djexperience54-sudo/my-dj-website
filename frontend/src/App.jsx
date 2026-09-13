@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import AboutSection from './components/AboutSection'
 import BookingSection from './components/BookingSection'
+import CommentSection from './components/CommentSection'
 import EventList from './components/EventList'
 import GalleryPreview from './components/GalleryPreview'
 import GenreNavigation from './components/GenreNavigation'
@@ -232,6 +233,67 @@ function SupportSection() {
         </div>
       </div>
     </section>
+  )
+}
+
+function ShareMixtapeButton({ mixtape }) {
+  const [shareStatus, setShareStatus] = useState('')
+  const [shareLinks, setShareLinks] = useState([])
+
+  function getShareUrl() {
+    return `${window.location.origin}/mixes/${encodeURIComponent(mixtape.id)}`
+  }
+
+  async function handleShare() {
+    const shareUrl = getShareUrl()
+    const shareData = {
+      title: `${mixtape.title} | INT'L DJ EXPERIENCE`,
+      text: `Listen to ${mixtape.title} by INT'L DJ EXPERIENCE`,
+      url: shareUrl
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+        setShareStatus('Share menu opened.')
+        return
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return
+        }
+      }
+    }
+
+    const encodedUrl = encodeURIComponent(shareUrl)
+    const encodedText = encodeURIComponent(`${shareData.text}: ${shareUrl}`)
+    const fallbackLinks = [
+      { label: 'WhatsApp', url: `https://wa.me/?text=${encodedText}` },
+      { label: 'Telegram', url: `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(shareData.text)}` },
+      { label: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+      { label: 'X', url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodedUrl}` },
+      { label: 'Email', url: `mailto:?subject=${encodeURIComponent(shareData.title)}&body=${encodedText}` }
+    ]
+
+    setShareLinks(fallbackLinks)
+    setShareStatus('Choose where to share this mixtape.')
+
+    try {
+      await navigator.clipboard?.writeText(shareUrl)
+    } catch {
+      // The share link remains available through the opened share target.
+    }
+  }
+
+  return (
+    <div className="share-mixtape-action">
+      <button className="text-link" type="button" onClick={handleShare}>Share mixtape</button>
+      {shareStatus && <small className="share-status" role="status">{shareStatus}</small>}
+      {shareLinks.length > 0 && (
+        <div className="share-links" aria-label="Share options">
+          {shareLinks.map((link) => <a key={link.label} href={link.url} target={link.label === 'Email' ? undefined : '_blank'} rel={link.label === 'Email' ? undefined : 'noreferrer'}>{link.label}</a>)}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -534,7 +596,7 @@ function App() {
                         Download mix
                       </a>
                     )}
-                    <a className="text-link" href="#book">Play Mix</a>
+                    <ShareMixtapeButton mixtape={mixtapes[0]} />
                   </div>
                 </div>
               </>
@@ -568,6 +630,7 @@ function App() {
         <GalleryPreview items={gallery} />
         <MusicPlatforms platforms={musicPlatforms} />
         <SupportSection />
+        <CommentSection />
         <BookingSection />
       </main>
       <SiteFooter />

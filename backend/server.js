@@ -5,7 +5,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
-const { sendBookingEmail } = require('./email')
+const { sendBookingEmail, sendCommentEmail } = require('./email')
 const { sanitizeBookingPayload, sanitizeCommentPayload } = require('./validation')
 
 const app = express()
@@ -138,6 +138,21 @@ app.post('/api/comments', asyncRoute(async (request, response) => {
   try {
     const payload = sanitizeCommentPayload(request.body)
     const comment = await createComment(payload)
+
+    try {
+      await sendCommentEmail({
+        to: process.env.SMTP_TO || 'djexperience54@gmail.com',
+        from: process.env.SMTP_FROM || process.env.SMTP_USER || 'djexperience54@gmail.com',
+        ...payload
+      })
+    } catch (emailError) {
+      console.error('Comment email delivery failed:', emailError.message)
+      return response.status(202).json({
+        success: true,
+        message: 'Your comment was posted, but email notification is not active yet.',
+        data: comment
+      })
+    }
 
     response.status(201).json({
       success: true,

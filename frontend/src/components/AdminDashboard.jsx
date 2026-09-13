@@ -219,7 +219,7 @@ function AdminDashboard({ user, onSignOut }) {
         setVideos(videoRows ?? [])
         const { data: commentRows, error: commentError } = await getSupabaseClient()
           .from('comments')
-          .select('id, name, mood, message, created_at')
+          .select('id, name, email, mood, message, created_at')
           .order('created_at', { ascending: false })
 
         if (commentError && !/does not exist|relation .* does not exist|schema cache/i.test(commentError.message)) {
@@ -896,6 +896,7 @@ function AdminDashboard({ user, onSignOut }) {
             <article className="admin-booking-row" key={comment.id}>
               <div>
                 <strong>{comment.name} - {comment.mood}</strong>
+                <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(comment.email)}&su=${encodeURIComponent(`Re: Your comment on INT'L DJ EXPERIENCE`)}&body=${encodeURIComponent(`Hi ${comment.name},\n\nThank you for your comment.\n\n`)}`} target="_blank" rel="noreferrer">Reply in Gmail</a>
                 <p>{comment.message}</p>
               </div>
               <small>{new Date(comment.created_at).toLocaleString()}</small>

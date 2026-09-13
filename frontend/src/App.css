@@ -478,6 +478,31 @@ h1 {
   margin-left: 20px;
 }
 
+.share-mixtape-action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-status {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.share-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.share-links a {
+  color: var(--color-gold);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .mix-card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -3,6 +3,7 @@ import { apiUrl } from '../lib/api'
 
 const initialForm = {
   name: '',
+  email: '',
   mood: 'good',
   message: ''
 }
@@ -64,6 +65,11 @@ function CommentSection() {
           <label>
             Name
             <input name="name" value={form.name} onChange={handleChange} placeholder="Your name" required />
+          </label>
+
+          <label>
+            Email
+            <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@example.com" required />
           </label>
 
           <label>

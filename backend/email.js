@@ -42,4 +42,23 @@ async function sendBookingEmail({ to, from, name, email, eventType, message }) {
   await transporter.sendMail(mailOptions)
 }
 
-module.exports = { sendBookingEmail }
+async function sendCommentEmail({ to, from, name, email, mood, message }) {
+  const transporter = createTransport()
+
+  await transporter.sendMail({
+    from: from || process.env.SMTP_USER,
+    to,
+    replyTo: email,
+    subject: `New website comment from ${name}`,
+    text: [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Mood: ${mood}`,
+      '',
+      'Comment:',
+      message
+    ].join('\n')
+  })
+}
+
+module.exports = { sendBookingEmail, sendCommentEmail }
