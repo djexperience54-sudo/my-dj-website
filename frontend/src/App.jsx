@@ -389,6 +389,45 @@ function App() {
 
   const detailMixtape = mixtapes.find((mixtape) => mixtape.id === detailId)
 
+  useEffect(() => {
+    if (!detailMixtape) {
+      return
+    }
+
+    const shareUrl = `${window.location.origin}/mixes/${encodeURIComponent(detailMixtape.id)}`
+    document.title = `${detailMixtape.title} | INT'L DJ EXPERIENCE`
+
+    const metadata = {
+      description: detailMixtape.description,
+      'og:title': detailMixtape.title,
+      'og:description': detailMixtape.description,
+      'og:image': detailMixtape.artwork,
+      'og:url': shareUrl,
+      'twitter:title': detailMixtape.title,
+      'twitter:description': detailMixtape.description,
+      'twitter:image': detailMixtape.artwork
+    }
+
+    Object.entries(metadata).forEach(([name, content]) => {
+      const selector = name.startsWith('og:') || name.startsWith('twitter:')
+        ? `meta[property="${name}"]`
+        : `meta[name="${name}"]`
+      let element = document.head.querySelector(selector)
+
+      if (!element) {
+        element = document.createElement('meta')
+        if (name.startsWith('og:') || name.startsWith('twitter:')) {
+          element.setAttribute('property', name)
+        } else {
+          element.setAttribute('name', name)
+        }
+        document.head.appendChild(element)
+      }
+
+      element.setAttribute('content', content)
+    })
+  }, [detailMixtape])
+
   if (detailId && detailMixtape) {
     return (
       <div id="top">
