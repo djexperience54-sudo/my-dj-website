@@ -115,4 +115,42 @@ async function createComment(comment) {
   return data
 }
 
-module.exports = { createBooking, createComment, formatSupabaseError, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent }
+async function createEmailVerification(record) {
+  const { data, error } = await supabase.from('email_verifications').insert(record).select('token').single()
+  if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
+  return data
+}
+
+async function getEmailVerification(token, email, purpose) {
+  const { data, error } = await supabase
+    .from('email_verifications')
+    .select('token, email, purpose, code_hash, expires_at')
+    .eq('token', token)
+    .eq('email', email)
+    .eq('purpose', purpose)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+  if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
+  return data
+}
+
+async function getLatestEmailVerification(email, purpose) {
+  const { data, error } = await supabase
+    .from('email_verifications')
+    .select('token, email, purpose, code_hash, expires_at')
+    .eq('email', email)
+    .eq('purpose', purpose)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
+  return data
+}
+
+async function deleteEmailVerification(token) {
+  const { error } = await supabase.from('email_verifications').delete().eq('token', token)
+  if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
+}
+
+module.exports = { createBooking, createComment, createEmailVerification, deleteEmailVerification, formatSupabaseError, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent }

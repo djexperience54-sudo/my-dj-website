@@ -3,9 +3,10 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, createComment, getAuthenticatedUser, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent } = require('./database')
+const { createBooking, createComment, createEmailVerification, deleteEmailVerification, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
-const { sendBookingEmail, sendCommentEmail } = require('./email')
+const { sendBookingEmail, sendCommentEmail, sendVerificationCode } = require('./email')
+const crypto = require('crypto')
 const { sanitizeBookingPayload, sanitizeCommentPayload } = require('./validation')
 
 const app = express()
@@ -49,6 +50,39 @@ function escapeXml(value) {
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
+
+function hashVerificationCode(code) {
+  return crypto.createHash('sha256').update(code).digest('hex')
+}
+
+app.post('/api/email-verification/request', asyncRoute(async (request, response) => {
+  const email = String(request.body.email || '').trim().toLowerCase()
+  const purpose = ['booking', 'comment'].includes(request.body.purpose) ? request.body.purpose : ''
+  if (!isValidEmail(email) || !purpose) {
+    return response.status(400).json({ error: 'Enter a valid email and verification purpose.' })
+  }
+
+  const code = String(crypto.randomInt(100000, 1000000))
+  const token = crypto.randomUUID()
+  await createEmailVerification({ token, email, purpose, code_hash: hashVerificationCode(code), expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() })
+  await sendVerificationCode({ to: email, code })
+  response.json({ success: true, message: 'Verification code sent.' })
+}))
+
+app.post('/api/email-verification/verify', asyncRoute(async (request, response) => {
+  const email = String(request.body.email || '').trim().toLowerCase()
+  const purpose = ['booking', 'comment'].includes(request.body.purpose) ? request.body.purpose : ''
+  const code = String(request.body.code || '').trim()
+  if (!isValidEmail(email) || !purpose || !/^\d{6}$/.test(code)) {
+    return response.status(400).json({ error: 'Enter the six-digit verification code.' })
+  }
+
+  const verification = await getLatestEmailVerification(email, purpose)
+  if (!verification || verification.code_hash !== hashVerificationCode(code)) {
+    return response.status(400).json({ error: 'That verification code is invalid or expired.' })
+  }
+  response.json({ success: true, data: { token: verification.token } })
+}))
 
 app.get('/', (request, response) => {
   response.json({
@@ -96,12 +130,17 @@ app.get('/sitemap.xml', asyncRoute(async (request, response) => {
 app.post('/api/bookings', asyncRoute(async (request, response) => {
   try {
     const payload = sanitizeBookingPayload(request.body)
+    const verification = await getEmailVerification(request.body.verificationToken, payload.email, 'booking')
+    if (!verification) {
+      return response.status(400).json({ error: 'Verify your email before sending the booking enquiry.' })
+    }
     const booking = await createBooking({
       name: payload.name,
       email: payload.email,
       event_type: payload.eventType,
       message: payload.message
     })
+    await deleteEmailVerification(verification.token)
 
     const recipient = process.env.SMTP_TO || 'djexperience54@gmail.com'
     const emailPayload = {
@@ -130,7 +169,12 @@ app.post('/api/bookings', asyncRoute(async (request, response) => {
 app.post('/api/comments', asyncRoute(async (request, response) => {
   try {
     const payload = sanitizeCommentPayload(request.body)
+    const verification = await getEmailVerification(request.body.verificationToken, payload.email, 'comment')
+    if (!verification) {
+      return response.status(400).json({ error: 'Verify your email before posting a comment.' })
+    }
     const comment = await createComment(payload)
+    await deleteEmailVerification(verification.token)
 
     sendCommentEmail({
         to: process.env.SMTP_TO || 'djexperience54@gmail.com',

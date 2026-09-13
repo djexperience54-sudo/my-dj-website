@@ -70,6 +70,15 @@ create table if not exists public.comments (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.email_verifications (
+  token uuid primary key,
+  email text not null,
+  purpose text not null check (purpose in ('booking', 'comment')),
+  code_hash text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.mixtapes enable row level security;
 alter table public.events enable row level security;
 alter table public.gallery_items enable row level security;
@@ -77,6 +86,7 @@ alter table public.site_videos enable row level security;
 alter table public.site_settings enable row level security;
 alter table public.bookings enable row level security;
 alter table public.comments enable row level security;
+alter table public.email_verifications enable row level security;
 
 create policy "Public can read mixtapes"
   on public.mixtapes for select to anon, authenticated using (true);

@@ -79,4 +79,14 @@ async function sendCommentEmail({ to, from, name, email, mood, message }) {
   }))
 }
 
-module.exports = { sendBookingEmail, sendCommentEmail }
+async function sendVerificationCode({ to, code }) {
+  const transporter = createTransport()
+  await sendWithTimeout(() => transporter.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject: 'Verify your email for INT\'L DJ EXPERIENCE',
+    text: `Your verification code is ${code}. It expires in 10 minutes.`
+  }))
+}
+
+module.exports = { sendBookingEmail, sendCommentEmail, sendVerificationCode }

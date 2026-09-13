@@ -1322,6 +1322,44 @@ h1 {
   font-weight: 700;
 }
 
+.email-verification {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  background: var(--color-white);
+}
+
+.email-verification legend {
+  padding: 0 4px;
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.email-verification p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.email-verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.email-verification-actions input {
+  flex: 1 1 120px;
+  min-width: 120px;
+}
+
+.email-verification-actions button {
+  justify-self: auto;
+  white-space: nowrap;
+}
+
 .form-status {
   margin: 0;
   color: var(--color-gold);

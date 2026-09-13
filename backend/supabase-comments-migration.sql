@@ -14,6 +14,17 @@ alter table public.comments add column if not exists email text;
 update public.comments set email = 'unknown@example.com' where email is null;
 alter table public.comments alter column email set not null;
 
+create table if not exists public.email_verifications (
+  token uuid primary key,
+  email text not null,
+  purpose text not null check (purpose in ('booking', 'comment')),
+  code_hash text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.email_verifications enable row level security;
+
 alter table public.comments enable row level security;
 
 drop policy if exists "Public can submit comments" on public.comments;

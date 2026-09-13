@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiUrl } from '../lib/api'
+import EmailVerificationFields from './EmailVerificationFields'
 
 const initialForm = {
   name: '',
@@ -15,12 +16,16 @@ function CommentSection() {
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [verificationToken, setVerificationToken] = useState('')
+  const [isEmailVerified, setIsEmailVerified] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((currentForm) => ({ ...currentForm, [name]: value }))
     setSubmitted(false)
     setError('')
+    setVerificationToken('')
+    setIsEmailVerified(false)
   }
 
   async function handleSubmit(event) {
@@ -32,6 +37,11 @@ function CommentSection() {
 
     setIsSubmitting(true)
     setError('')
+    if (!isEmailVerified || !verificationToken) {
+      setError('Verify your email before posting a comment.')
+      setIsSubmitting(false)
+      return
+    }
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs)
 
@@ -39,7 +49,7 @@ function CommentSection() {
       const response = await fetch(apiUrl('/api/comments'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, verificationToken }),
         signal: controller.signal
       })
 
@@ -51,6 +61,8 @@ function CommentSection() {
 
       setSubmitted(true)
       setForm(initialForm)
+      setVerificationToken('')
+      setIsEmailVerified(false)
     } catch (submissionError) {
       setError(submissionError.name === 'AbortError' ? 'The server took too long to respond. Please try again.' : submissionError.message)
     } finally {
@@ -72,6 +84,8 @@ function CommentSection() {
             Name
             <input name="name" value={form.name} onChange={handleChange} placeholder="Your name" required />
           </label>
+
+          <EmailVerificationFields email={form.email} purpose="comment" token={verificationToken} onTokenChange={setVerificationToken} onVerified={setIsEmailVerified} />
 
           <label>
             Email
