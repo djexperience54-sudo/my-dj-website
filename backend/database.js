@@ -43,6 +43,17 @@ function getGalleryItems() {
   return getRows('gallery_items', 'id, src, alt', 'sort_order')
 }
 
+async function getPublicComments() {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, name, mood, message, created_at')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  if (error) throw new Error(formatSupabaseError(error, 'Public comments'))
+  return data
+}
+
 async function getSitemapContent() {
   const [mixtapes] = await Promise.all([
     supabase.from('mixtapes').select('id, created_at').order('created_at', { ascending: false }),
@@ -153,4 +164,4 @@ async function deleteEmailVerification(token) {
   if (error) throw new Error(formatSupabaseError(error, 'Email verification'))
 }
 
-module.exports = { createBooking, createComment, createEmailVerification, deleteEmailVerification, formatSupabaseError, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent }
+module.exports = { createBooking, createComment, createEmailVerification, deleteEmailVerification, formatSupabaseError, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent }

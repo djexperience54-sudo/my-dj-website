@@ -7,6 +7,7 @@ function EmailVerificationFields({ email, purpose, token, onTokenChange, onVerif
   const [error, setError] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   async function requestCode() {
     setIsSending(true)
@@ -24,6 +25,7 @@ function EmailVerificationFields({ email, purpose, token, onTokenChange, onVerif
         throw new Error(result.error || 'We could not send a verification code.')
       }
       setStatus('Verification code sent. Check your email.')
+      setIsOpen(true)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -57,7 +59,8 @@ function EmailVerificationFields({ email, purpose, token, onTokenChange, onVerif
   }
 
   return (
-    <fieldset className="email-verification" disabled={Boolean(token)}>
+    <>
+      <fieldset className="email-verification" disabled={Boolean(token)}>
       <legend>Email verification</legend>
       <p>Verify that you can access this email before sending.</p>
       <div className="email-verification-actions">
@@ -79,9 +82,34 @@ function EmailVerificationFields({ email, purpose, token, onTokenChange, onVerif
           {isVerifying ? 'Verifying...' : 'Verify email'}
         </button>
       </div>
-      {status && <small className="form-status" role="status">{status}</small>}
-      {error && <small className="form-error" role="alert">{error}</small>}
-    </fieldset>
+        {status && <small className="form-status" role="status">{status}</small>}
+        {error && <small className="form-error" role="alert">{error}</small>}
+      </fieldset>
+      {isOpen && !token && (
+        <div className="verification-modal" role="dialog" aria-modal="true" aria-labelledby="verification-title">
+          <div className="verification-modal-panel">
+            <h3 id="verification-title">Check your email</h3>
+            <p>We sent a six-digit code to {email}. Paste it below to continue.</p>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="6-digit code"
+              aria-label="Email verification code"
+              maxLength="6"
+              autoFocus
+            />
+            <div className="verification-modal-actions">
+              <button type="button" onClick={verifyCode} disabled={isVerifying || code.length !== 6}>{isVerifying ? 'Confirming...' : 'Confirm email'}</button>
+              <button type="button" className="verification-cancel" onClick={() => setIsOpen(false)}>Cancel</button>
+            </div>
+            {error && <small className="form-error" role="alert">{error}</small>}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

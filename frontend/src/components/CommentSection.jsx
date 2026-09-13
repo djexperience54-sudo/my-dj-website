@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiUrl } from '../lib/api'
 import EmailVerificationFields from './EmailVerificationFields'
 
@@ -13,9 +13,17 @@ const requestTimeoutMs = 20000
 
 function CommentSection() {
   const [form, setForm] = useState(initialForm)
+  const [comments, setComments] = useState([])
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch(apiUrl('/api/comments'))
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Comments could not be loaded.')))
+      .then((result) => setComments(result.data || []))
+      .catch(() => {})
+  }, [])
   const [verificationToken, setVerificationToken] = useState('')
   const [isEmailVerified, setIsEmailVerified] = useState(false)
 
@@ -60,6 +68,7 @@ function CommentSection() {
       }
 
       setSubmitted(true)
+      setComments((currentComments) => [result.data, ...currentComments])
       setForm(initialForm)
       setVerificationToken('')
       setIsEmailVerified(false)
@@ -117,6 +126,17 @@ function CommentSection() {
           )}
           {error && <p className="form-error" role="alert">{error}</p>}
         </form>
+        <div className="public-comments" aria-live="polite">
+          <h3>What listeners are saying</h3>
+          {comments.length === 0 && <p>No comments yet. Be the first to share your experience.</p>}
+          {comments.map((comment) => (
+            <article key={comment.id} className="public-comment">
+              <strong>{comment.name}</strong>
+              <span>{comment.mood}</span>
+              <p>{comment.message}</p>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   )

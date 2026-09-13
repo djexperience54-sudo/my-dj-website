@@ -3,7 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-const { createBooking, createComment, createEmailVerification, deleteEmailVerification, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicSiteContent, getSitemapContent } = require('./database')
+const { createBooking, createComment, createEmailVerification, deleteEmailVerification, getAuthenticatedUser, getEmailVerification, getLatestEmailVerification, getEvents, getGalleryItems, getMixtapes, getPublicComments, getPublicSiteContent, getSitemapContent } = require('./database')
 const { createUploadSignature, isConfigured: isCloudinaryConfigured } = require('./cloudinary')
 const { sendBookingEmail, sendCommentEmail, sendVerificationCode } = require('./email')
 const crypto = require('crypto')
@@ -65,7 +65,13 @@ app.post('/api/email-verification/request', asyncRoute(async (request, response)
   const code = String(crypto.randomInt(100000, 1000000))
   const token = crypto.randomUUID()
   await createEmailVerification({ token, email, purpose, code_hash: hashVerificationCode(code), expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() })
-  await sendVerificationCode({ to: email, code })
+  try {
+    await sendVerificationCode({ to: email, code })
+  } catch (error) {
+    await deleteEmailVerification(token).catch(() => {})
+    console.error('Verification email delivery failed:', error.message)
+    return response.status(503).json({ error: 'We could not send the verification email. Check the Render SMTP settings and try again.' })
+  }
   response.json({ success: true, message: 'Verification code sent.' })
 }))
 
@@ -106,6 +112,10 @@ app.get('/api/events', asyncRoute(async (request, response) => {
 
 app.get('/api/gallery', asyncRoute(async (request, response) => {
   response.json({ data: await getGalleryItems() })
+}))
+
+app.get('/api/comments', asyncRoute(async (request, response) => {
+  response.json({ data: await getPublicComments() })
 }))
 
 app.get('/api/site-content', asyncRoute(async (request, response) => {
