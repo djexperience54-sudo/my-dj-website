@@ -3,13 +3,13 @@ import { getSupabaseClient } from '../lib/supabaseClient'
 import { extractEmbeddedArtwork, uploadToCloudinary } from '../lib/cloudinaryUpload'
 
 const contentTables = [
-  { key: 'mixtapes', label: 'Mixtapes' },
-  { key: 'events', label: 'Events' },
-  { key: 'gallery_items', label: 'Gallery items' },
-  { key: 'site_videos', label: 'Featured videos', optional: true },
-  { key: 'site_settings', label: 'Homepage settings', optional: true },
-  { key: 'comments', label: 'Comments', optional: true },
-  { key: 'bookings', label: 'Bookings', optional: true }
+  { key: 'mixtapes', label: 'Mixtapes', target: 'mixtape-management-title' },
+  { key: 'events', label: 'Events', target: 'events-management-title' },
+  { key: 'gallery_items', label: 'Gallery items', target: 'gallery-management-title' },
+  { key: 'site_videos', label: 'Featured videos', target: 'video-management-title', optional: true },
+  { key: 'site_settings', label: 'Homepage settings', target: 'site-settings-title', optional: true },
+  { key: 'comments', label: 'Comments', target: 'comments-title-admin', optional: true },
+  { key: 'bookings', label: 'Bookings', target: 'bookings-title', optional: true }
 ]
 
 const emptyMixtape = {
@@ -69,6 +69,10 @@ function formatFileSize(bytes) {
   }
 
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function scrollToDashboardSection(targetId) {
+  document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function AdminDashboard({ user, onSignOut }) {
@@ -673,7 +677,9 @@ function AdminDashboard({ user, onSignOut }) {
 
       setVideos((currentVideos) => {
         const withoutSaved = currentVideos.filter((entry) => entry.id !== data.id)
-        return [...withoutSaved, data].sort((first, second) => (first.sort_order ?? 0) - (second.sort_order ?? 0))
+        const nextVideos = [...withoutSaved, data].sort((first, second) => (first.sort_order ?? 0) - (second.sort_order ?? 0))
+        setCounts((currentCounts) => ({ ...currentCounts, site_videos: nextVideos.length }))
+        return nextVideos
       })
       setVideoForm({ id: '', title: '', url: '', type: 'youtube', sort_order: 0 })
     } catch (saveError) {
@@ -698,6 +704,7 @@ function AdminDashboard({ user, onSignOut }) {
     }
 
     setVideos((currentVideos) => currentVideos.filter((item) => item.id !== id))
+    setCounts((currentCounts) => ({ ...currentCounts, site_videos: Math.max(0, (currentCounts.site_videos ?? 0) - 1) }))
   }
 
   async function handleBookingStatusChange(id, status) {
@@ -736,11 +743,11 @@ function AdminDashboard({ user, onSignOut }) {
         {isLoading && <p className="admin-status">Loading content counts...</p>}
         {error && <p className="admin-login-error" role="alert">{error}</p>}
         <div className="admin-stat-grid">
-          {contentTables.map(({ key, label }) => (
-            <article className="admin-stat" key={key}>
+          {contentTables.map(({ key, label, target }) => (
+            <button className="admin-stat" key={key} type="button" onClick={() => scrollToDashboardSection(target)}>
               <span>{label}</span>
               <strong>{counts[key] ?? '-'}</strong>
-            </article>
+            </button>
           ))}
         </div>
       </section>
@@ -1002,6 +1009,7 @@ function AdminDashboard({ user, onSignOut }) {
               <div>
                 <strong>{booking.name} - {booking.event_type}</strong>
                 <a href={`mailto:${booking.email}`}>{booking.email}</a>
+                <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(booking.email)}&su=${encodeURIComponent(`Re: Booking enquiry for INT'L DJ EXPERIENCE`)}&body=${encodeURIComponent(`Hi ${booking.name},\n\nThank you for your booking enquiry.\n\n`)}`} target="_blank" rel="noreferrer">Reply in Gmail</a>
                 <p>{booking.message}</p>
               </div>
               <select value={booking.status} onChange={(event) => handleBookingStatusChange(booking.id, event.target.value)} aria-label={`Status for ${booking.name}`}>

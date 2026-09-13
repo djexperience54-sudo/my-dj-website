@@ -11,6 +11,7 @@ const initialForm = {
 function BookingForm() {
   const [form, setForm] = useState(initialForm)
   const [submitted, setSubmitted] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -18,6 +19,7 @@ function BookingForm() {
     const { name, value } = event.target
     setForm((currentForm) => ({ ...currentForm, [name]: value }))
     setSubmitted(false)
+    setSuccessMessage('')
     setError('')
   }
 
@@ -45,6 +47,7 @@ function BookingForm() {
       }
 
       setSubmitted(true)
+      setSuccessMessage(result.message || 'Your message has been sent successfully. I will reply within 24 hours.')
       setForm(initialForm)
     } catch (submissionError) {
       setError(submissionError.message)
@@ -76,7 +79,7 @@ function BookingForm() {
       </button>
       {submitted && (
         <p className="form-status" role="status">
-          Your message has been sent successfully. I will reply within 24 hours.
+          {successMessage}
         </p>
       )}
       {error && <p className="form-error" role="alert">{error}</p>}

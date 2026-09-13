@@ -119,7 +119,7 @@ app.post('/api/bookings', asyncRoute(async (request, response) => {
       console.error('Booking email delivery failed:', emailError.message)
       return response.status(202).json({
         success: true,
-        message: 'Your booking request was saved successfully, but email delivery is not active yet. Add the Gmail SMTP app password in Render to enable booking notifications.',
+        message: 'Your booking request was saved successfully, but email notification could not be delivered. The admin should configure SMTP_USER and SMTP_PASS in Render.',
         data: booking
       })
     }
