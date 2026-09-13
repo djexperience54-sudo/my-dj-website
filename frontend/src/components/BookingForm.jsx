@@ -8,6 +8,8 @@ const initialForm = {
   message: ''
 }
 
+const requestTimeoutMs = 20000
+
 function BookingForm() {
   const [form, setForm] = useState(initialForm)
   const [submitted, setSubmitted] = useState(false)
@@ -32,12 +34,15 @@ function BookingForm() {
 
     setIsSubmitting(true)
     setError('')
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs)
 
     try {
       const response = await fetch(apiUrl('/api/bookings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
+        signal: controller.signal
       })
 
       const result = await response.json().catch(() => ({}))
@@ -50,8 +55,9 @@ function BookingForm() {
       setSuccessMessage(result.message || 'Your message has been sent successfully. I will reply within 24 hours.')
       setForm(initialForm)
     } catch (submissionError) {
-      setError(submissionError.message)
+      setError(submissionError.name === 'AbortError' ? 'The server took too long to respond. Please try again.' : submissionError.message)
     } finally {
+      window.clearTimeout(timeoutId)
       setIsSubmitting(false)
     }
   }

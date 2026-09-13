@@ -8,6 +8,8 @@ const initialForm = {
   message: ''
 }
 
+const requestTimeoutMs = 20000
+
 function CommentSection() {
   const [form, setForm] = useState(initialForm)
   const [submitted, setSubmitted] = useState(false)
@@ -30,12 +32,15 @@ function CommentSection() {
 
     setIsSubmitting(true)
     setError('')
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs)
 
     try {
       const response = await fetch(apiUrl('/api/comments'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
+        signal: controller.signal
       })
 
       const result = await response.json().catch(() => ({}))
@@ -47,8 +52,9 @@ function CommentSection() {
       setSubmitted(true)
       setForm(initialForm)
     } catch (submissionError) {
-      setError(submissionError.message)
+      setError(submissionError.name === 'AbortError' ? 'The server took too long to respond. Please try again.' : submissionError.message)
     } finally {
+      window.clearTimeout(timeoutId)
       setIsSubmitting(false)
     }
   }

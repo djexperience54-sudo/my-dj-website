@@ -113,20 +113,13 @@ app.post('/api/bookings', asyncRoute(async (request, response) => {
       message: payload.message
     }
 
-    try {
-      await sendBookingEmail(emailPayload)
-    } catch (emailError) {
+    sendBookingEmail(emailPayload).catch((emailError) => {
       console.error('Booking email delivery failed:', emailError.message)
-      return response.status(202).json({
-        success: true,
-        message: 'Your booking request was saved successfully, but email notification could not be delivered. The admin should configure SMTP_USER and SMTP_PASS in Render.',
-        data: booking
-      })
-    }
+    })
 
     response.status(201).json({
       success: true,
-      message: 'Your booking request has been sent successfully. I will reply within 24 hours.',
+      message: 'Your booking request was saved successfully. I will reply within 24 hours.',
       data: booking
     })
   } catch (error) {
@@ -139,20 +132,13 @@ app.post('/api/comments', asyncRoute(async (request, response) => {
     const payload = sanitizeCommentPayload(request.body)
     const comment = await createComment(payload)
 
-    try {
-      await sendCommentEmail({
+    sendCommentEmail({
         to: process.env.SMTP_TO || 'djexperience54@gmail.com',
         from: process.env.SMTP_FROM || process.env.SMTP_USER || 'djexperience54@gmail.com',
         ...payload
-      })
-    } catch (emailError) {
+      }).catch((emailError) => {
       console.error('Comment email delivery failed:', emailError.message)
-      return response.status(202).json({
-        success: true,
-        message: 'Your comment was posted, but email notification is not active yet.',
-        data: comment
       })
-    }
 
     response.status(201).json({
       success: true,

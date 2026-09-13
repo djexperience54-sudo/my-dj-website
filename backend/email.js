@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer')
 
+const emailTimeoutMs = 15000
+
 function createTransport() {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com'
   const port = Number(process.env.SMTP_PORT || 587)
@@ -14,11 +16,27 @@ function createTransport() {
     host,
     port,
     secure: port === 465,
+    connectionTimeout: emailTimeoutMs,
+    greetingTimeout: emailTimeoutMs,
+    socketTimeout: emailTimeoutMs,
     auth: {
       user,
       pass
     }
   })
+}
+
+async function sendWithTimeout(sendOperation) {
+  let timeoutId
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Email delivery timed out.')), emailTimeoutMs)
+  })
+
+  try {
+    return await Promise.race([sendOperation(), timeout])
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 async function sendBookingEmail({ to, from, name, email, eventType, message }) {
@@ -39,13 +57,13 @@ async function sendBookingEmail({ to, from, name, email, eventType, message }) {
     ].join('\n')
   }
 
-  await transporter.sendMail(mailOptions)
+  await sendWithTimeout(() => transporter.sendMail(mailOptions))
 }
 
 async function sendCommentEmail({ to, from, name, email, mood, message }) {
   const transporter = createTransport()
 
-  await transporter.sendMail({
+  await sendWithTimeout(() => transporter.sendMail({
     from: from || process.env.SMTP_USER,
     to,
     replyTo: email,
@@ -58,7 +76,7 @@ async function sendCommentEmail({ to, from, name, email, mood, message }) {
       'Comment:',
       message
     ].join('\n')
-  })
+  }))
 }
 
 module.exports = { sendBookingEmail, sendCommentEmail }
